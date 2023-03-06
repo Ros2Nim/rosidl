@@ -6,4 +6,4 @@ skipDirs      = @["doc"]
 
 requires "nim >= 1.6.0"
 
-requires "rcutils"
+requires "https://github.com/Ros2Nim/rcutils.git"
