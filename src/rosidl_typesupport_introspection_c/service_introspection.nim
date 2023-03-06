@@ -13,16 +13,15 @@
 ##  limitations under the License.
 
 import
-  ../rosidl_runtime_c/service_type_support_struct, rcutils/types/rcutils_ret,
-  ../rosidl_runtime_c/service_type_support_struct,
-  ../rosidl_runtime_c/message_type_support_struct,
-  ../rosidl_runtime_c/visibility_control,
-  ../rosidl_runtime_c/visibility_control,
-  ../rosidl_runtime_c/message_type_support_struct,
-  ../rosidl_runtime_c/message_type_support_struct,
-  ../rosidl_runtime_c/service_type_support_struct,
-  ../rosidl_runtime_c/service_type_support_struct, ./message_introspection,
-  ./message_introspection, ../rosidl_runtime_c/message_initialization,
+  rosidl_runtime_c/service_type_support_struct, rcutils/types/rcutils_ret,
+  rosidl_runtime_c/service_type_support_struct,
+  rosidl_runtime_c/message_type_support_struct,
+  rosidl_runtime_c/visibility_control, rosidl_runtime_c/visibility_control,
+  rosidl_runtime_c/message_type_support_struct,
+  rosidl_runtime_c/message_type_support_struct,
+  rosidl_runtime_c/service_type_support_struct,
+  rosidl_runtime_c/service_type_support_struct, ./message_introspection,
+  ./message_introspection, rosidl_runtime_c/message_initialization,
   ./message_introspection, ./visibility_control, ./visibility_control,
   ./message_introspection
 

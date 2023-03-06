@@ -20,7 +20,6 @@ antExport ImporterConfig:
         - C2NimCfg:
           fileMatch: peg"'.h'"
           fileContents: str"""
-              #pragma c2nim mangle "'rosidl_runtime_c/'" "../rosidl_runtime_c/"
               """
     - ImportConfig:
       name: "rosidl_typesupport_interface"

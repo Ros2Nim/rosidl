@@ -38,3 +38,10 @@ export
   message_introspection,
   service_introspection,
   visibility_control
+
+static:
+  echo "BEFORE INSTALL"
+  when defined(clib):
+    echo "INSTALL CLIB"
+  else:
+    echo "DON'T INSTALL CLIB"
