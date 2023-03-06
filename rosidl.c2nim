@@ -43,6 +43,7 @@
 #pragma c2nim delete "rcutils/macros"
 #pragma c2nim delete "rcutils/visibilityControlMacros"
 #pragma c2nim delete "rcutils/visibility_control_macros"
+#pragma c2nim delete "rosidl_runtime_c/visibility_control"
 
 #pragma c2nim delete "rosidl_typesupport_interface/macros"
 #pragma c2nim delete "rosidlTypesupportInterface/macros"

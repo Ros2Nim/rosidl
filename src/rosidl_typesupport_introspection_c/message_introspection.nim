@@ -15,7 +15,6 @@
 import
   rosidl_runtime_c/message_initialization,
   rosidl_runtime_c/message_type_support_struct,
-  rosidl_runtime_c/visibility_control, rosidl_runtime_c/visibility_control,
   rosidl_runtime_c/message_type_support_struct,
   rosidl_runtime_c/message_type_support_struct, ./visibility_control,
   ./visibility_control

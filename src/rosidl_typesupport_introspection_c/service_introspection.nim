@@ -16,7 +16,6 @@ import
   rosidl_runtime_c/service_type_support_struct, rcutils/types/rcutils_ret,
   rosidl_runtime_c/service_type_support_struct,
   rosidl_runtime_c/message_type_support_struct,
-  rosidl_runtime_c/visibility_control, rosidl_runtime_c/visibility_control,
   rosidl_runtime_c/message_type_support_struct,
   rosidl_runtime_c/message_type_support_struct,
   rosidl_runtime_c/service_type_support_struct,
