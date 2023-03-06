@@ -1,15 +1,3 @@
-##  #pragma c2nim prefix "rosidl_"
-##  #pragma c2nim mangle "'rosidl_runtime_c/'" "../rosidl_runtime_c/"
-##  #pragma c2nim mangle "'rosidl_runtime_c__message_initialization'" "message_initialization"
-
-##  #pragma c2nim mangle "'service_name_'$" "service_name"
-##  #pragma c2nim mangle "'request_members_'$" "request_members"
-##  #pragma c2nim mangle "'response_members_'$" "response_members"
-##  #pragma c2nim mangle "'event_members_'$" "event_members"
-##  #pragma c2nim mangle "'rosidl_runtime_c__' {\\w+}" "$1"
-
-##  #pragma c2nim mangle "'rosidl_runtime_c.' {\\ident+}" "$1"
-
 ##  Copyright 2015 Open Source Robotics Foundation, Inc.
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");

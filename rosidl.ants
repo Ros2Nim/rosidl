@@ -23,8 +23,8 @@ antExport ImporterConfig:
               #pragma c2nim mangle "'rosidl_runtime_c/'" "../rosidl_runtime_c/"
               """
     - ImportConfig:
-      name: "rosidl_runtime_c"
-      sources: "deps/rosidl/rosidl_runtime_c/include"
+      name: "rosidl_typesupport_interface"
+      sources: "deps/rosidl/rosidl_typesupport_interface/include/"
       headerPrefix: "rosidl_runtime_c/"
       globs: ["**/*.h"]
       includes: [
@@ -35,30 +35,13 @@ antExport ImporterConfig:
         ]
       defines: []
       skipFiles: []
-      renameFiles:list:
-        - Replace:
-          pattern: peg"^'string.' .+"
-          repl: "rstring$1"
 
       c2NimCfgs:list:
         - C2NimCfg:
-          fileMatch: peg"'u16string.h'"
+          fileMatch: peg"'macros.h'"
           rawNims: str"""
-              type
-                uintLeast16T * {.importc: "uint_least16_t", header: "stddef.h", bycopy.} = object
+
               """
-        - C2NimCfg:
-          fileMatch: peg"'service_type_support_struct.h'"
-          rawNims: str"""
-              import rcutils/allocator
-              """
-        - C2NimCfg:
-          fileMatch: peg"'message_initialization.h'"
-          rawNims: str"""
-              """
-      sourceMods:list:
-        - CSrcMods:
-          fileMatch: peg"'testing'"
           
 
           

@@ -1,4 +1,6 @@
-##  Copyright 2015 Open Source Robotics Foundation, Inc.
+
+
+##  Copyright 2016 Open Source Robotics Foundation, Inc.
 ##
 ##  Licensed under the Apache License, Version 2.0 (the "License");
 ##  you may not use this file except in compliance with the License.
@@ -12,5 +14,12 @@
 ##  See the License for the specific language governing permissions and
 ##  limitations under the License.
 
-##  This logic was borrowed (then namespaced) from the examples on the gcc wiki:
-##      https://gcc.gnu.org/wiki/Visibility
+##  Declare the typesupport library name.
+
+##  Declare the typesupport symbol name. Note: this should not be called directly.
+
+##  Declare a typesupport symbol name for a rosidl message definition.
+
+##  Declare a typesupport symbol name for a rosidl service definition.
+
+##  Declare a typesupport symbol name for a rosidl action definition.
