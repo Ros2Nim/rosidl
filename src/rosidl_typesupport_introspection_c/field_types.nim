@@ -12,6 +12,7 @@
 ##  See the License for the specific language governing permissions and
 ##  limitations under the License.
 
+
 type
 
   rosidl_typesupport_introspection_c_field_types* {.size: sizeof(cint).} = enum ##
@@ -56,7 +57,7 @@ type
                               ##  For backward compatibility only.
 
 const
-  rosidl_typesupport_introspection_c_ROS_TYPE_FLOAT32 = rosidl_typesupport_introspection_c_ROS_TYPE_FLOAT
-  rosidl_typesupport_introspection_c_ROS_TYPE_FLOAT64 = rosidl_typesupport_introspection_c_ROS_TYPE_DOUBLE
-  rosidl_typesupport_introspection_c_ROS_TYPE_BOOL = rosidl_typesupport_introspection_c_ROS_TYPE_BOOLEAN
   rosidl_typesupport_introspection_c_ROS_TYPE_BYTE = rosidl_typesupport_introspection_c_ROS_TYPE_OCTET
+  rosidl_typesupport_introspection_c_ROS_TYPE_BOOL = rosidl_typesupport_introspection_c_ROS_TYPE_BOOLEAN
+  rosidl_typesupport_introspection_c_ROS_TYPE_FLOAT64 = rosidl_typesupport_introspection_c_ROS_TYPE_DOUBLE
+  rosidl_typesupport_introspection_c_ROS_TYPE_FLOAT32 = rosidl_typesupport_introspection_c_ROS_TYPE_FLOAT

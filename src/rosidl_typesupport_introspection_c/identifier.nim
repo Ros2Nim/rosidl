@@ -13,10 +13,9 @@
 ##  limitations under the License.
 
 import
-  ./visibility_control, ./visibility_control
+  ./visibility_control
 
 ##  String identifying the typesupport introspection implementation in use.
 
-let rosidl_typesupport_introspection_c_identifier* {.
-    importc: "rosidl_typesupport_introspection_c__identifier",
-    header: "rosidl_typesupport_introspection_c/identifier.h".}: cstring
+let rosidl_typesupport_introspection_c_identifier*
+    {.header: "rosidl_typesupport_introspection_c/identifier.h".}: cstring

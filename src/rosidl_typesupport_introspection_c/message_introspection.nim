@@ -14,10 +14,8 @@
 
 import
   rosidl_runtime_c/message_initialization,
-  rosidl_runtime_c/message_type_support_struct,
-  rosidl_runtime_c/message_type_support_struct,
-  rosidl_runtime_c/message_type_support_struct, ./visibility_control,
-  ./visibility_control
+  rosidl_runtime_c/message_type_support_struct, ./visibility_control
+
 
 type
 
@@ -90,4 +88,5 @@ type
                               ##  The function used to initialise the interface's in-memory representation
     fini_function* {.importc: "fini_function".}: proc (a1: pointer) ##
                               ##  The function used to clean up the interface's in-memory representation
+
 
