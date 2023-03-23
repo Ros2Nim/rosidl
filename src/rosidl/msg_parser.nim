@@ -1,4 +1,5 @@
 import std / [strutils, strformat, re, tables]
+import patty
 
 const PACKAGE_NAME_MESSAGE_TYPE_SEPARATOR* = "/"
 const COMMENT_DELIMITER* = "#"
@@ -120,6 +121,14 @@ type
         name*: string
         typ*: Type
 
+
+variant MsgVal:
+  MBool(bval: bool)
+  MByte(cval: byte)
+  MInt(ival: int64)
+  MUInt(uval: uint64)
+  MString(sval: string)
+
 proc is_primitive_type*(self: BaseType): bool =
     return self.pkg_name == ""
 
@@ -238,3 +247,98 @@ proc newConstant*(primitive_type, name, value_string: string): Constant =
 
 
 
+
+proc parse_primitive_value_string(typ: Type, value_string: string): int =
+    if not type_.is_primitive_type() or type_.is_array:
+        raise ValueError('the passed type must be a non-array primitive type')
+    primitive_type = type_.type
+
+    if primitive_type == 'bool':
+        true_values = ['true', '1']
+        false_values = ['false', '0']
+        if value_string.lower() not in (true_values + false_values):
+            raise InvalidValue(
+                primitive_type, value_string,
+                "must be either 'true' / '1' or 'false' / '0'")
+        return value_string.lower() in true_values
+
+    if primitive_type in ('byte', 'char'):
+        # same as uint8
+        ex = InvalidValue(primitive_type, value_string,
+                          'must be a valid integer value >= 0 and <= 255')
+        try:
+            value = int(value_string)
+        except ValueError:
+            try:
+                value = int(value_string, 0)
+            except ValueError:
+                raise ex
+
+        if value < 0 or value > 255:
+            raise ex
+        return value
+
+    if primitive_type in ['float32', 'float64']:
+        try:
+            return float(value_string)
+        except ValueError:
+            raise InvalidValue(
+                primitive_type, value_string,
+                "must be a floating point number using '.' as the separator")
+
+    if primitive_type in [
+        'int8', 'uint8',
+        'int16', 'uint16',
+        'int32', 'uint32',
+        'int64', 'uint64',
+    ]:
+        # determine lower and upper bound
+        is_unsigned = primitive_type.startswith('u')
+        bits = int(primitive_type[4 if is_unsigned else 3:])
+        lower_bound = 0 if is_unsigned else -(2 ** (bits - 1))
+        upper_bound = (2 ** (bits if is_unsigned else (bits - 1))) - 1
+
+        ex = InvalidValue(primitive_type, value_string,
+                          'must be a valid integer value >= %d and <= %u' %
+                          (lower_bound, upper_bound))
+
+        try:
+            value = int(value_string)
+        except ValueError:
+            try:
+                value = int(value_string, 0)
+            except ValueError:
+                raise ex
+
+        # check that value is in valid range
+        if value < lower_bound or value > upper_bound:
+            raise ex
+
+        return value
+
+    if primitive_type in ('string', 'wstring'):
+        # remove outer quotes to allow leading / trailing spaces in the string
+        for quote in ['"', "'"]:
+            if value_string.startswith(quote) and value_string.endswith(quote):
+                value_string = value_string[1:-1]
+                match = re.search(r'(?<!\\)%s' % quote, value_string)
+                if match is not None:
+                    raise InvalidValue(
+                        primitive_type,
+                        value_string,
+                        'string inner quotes not properly escaped')
+                value_string = value_string.replace('\\' + quote, quote)
+                break
+
+        # check that value is in valid range
+        if type_.string_upper_bound and \
+                len(value_string) > type_.string_upper_bound:
+            base_type = Type(BaseType.__str__(type_))
+            raise InvalidValue(
+                base_type, value_string,
+                'string must not exceed the maximum length of %u characters' %
+                type_.string_upper_bound)
+
+        return value_string
+
+    assert False, "unknown primitive type '%s'" % primitive_type
