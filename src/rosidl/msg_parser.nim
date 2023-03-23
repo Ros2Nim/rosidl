@@ -1,4 +1,4 @@
-import std / [strutils, strformat, re]
+import std / [strutils, strformat, re, tables]
 
 const PACKAGE_NAME_MESSAGE_TYPE_SEPARATOR* = "/"
 const COMMENT_DELIMITER* = "#"
@@ -111,6 +111,10 @@ type
         base*: BaseType
 
     Constant* = ref object
+        typ*: string
+        name*: string
+        value*: bool
+        annotations*: Table[string, seq[string]]
 
     Field* = ref object
         name*: string
@@ -215,3 +219,22 @@ proc newType*(type_string: string, context_package_name=""): Type =
     result.base = newBaseType(
         type_string,
         context_package_name=context_package_name)
+
+proc newConstant*(primitive_type, name, value_string: string): Constant =
+    if primitive_type notin PRIMITIVE_TYPES:
+        raise newException(ValueError,
+                        "the constant type '$1' must be a primitive type" %
+                        [primitive_type])
+    result.typ = primitive_type
+    if not is_valid_constant_name(name):
+        raise newException(ValueError, "'{}' is an invalid constant name." % [name])
+    result.name = name
+    if value_string is "":
+        raise newException(ValueError, "the constant value must not be 'None'")
+
+    result.value = parse_primitive_value_string(
+        newType(primitive_type), value_string)
+
+
+
+
