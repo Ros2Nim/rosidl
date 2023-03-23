@@ -253,18 +253,17 @@ proc newConstant*(primitive_type, name, value_string: string): Constant =
     result.value = parse_primitive_value_string(
         newType(primitive_type), value_string)
 
-# proc newField*(typ: Type, name: string, default_value_string=""): Field =
-#     result.typ = typ
-#     if not is_valid_field_name(name):
-#         raise newException(ValueError, "`$1` is an invalid field name. " % [name])
-#     result.name = name
-#     if default_value_string == "":
-#         result.default_value = None
-#     else:
-#         self.default_value = parse_value_string(
-#             type_, default_value_string)
-
-#     self.annotations = {}
+proc newField*(typ: Type, name: string, default_value_string=""): Field =
+    result.typ = typ
+    if not is_valid_field_name(name):
+        raise newException(ValueError, "`$1` is an invalid field name. " % [name])
+    result.name = name
+    # if default_value_string == "":
+    #     result.default_value = None
+    # else:
+    #     self.default_value = parse_value_string(
+    #         type_, default_value_string)
+    # self.annotations = {}
 
 
 
@@ -419,8 +418,8 @@ proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageS
     
     var
         current_comments: seq[string]
-        comment_lines: seq[Items]
-        last_element: Items
+        comment_lines: seq[BaseField]
+        last_element: BaseField
 
     for line in lines:
         var line = line.strip(leading=true, trailing=false, Whitespace)
@@ -474,16 +473,13 @@ proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageS
                     newType(type_string, context_package_name=pkg_name),
                     field_name, default_value_string))
             except Exception as err:
-                print(
-                    "Error processing '{line}' of '{pkg}/{msg}': '{err}'".format(
-                        line=line, pkg=pkg_name, msg=msg_name, err=err),
-                    file=sys.stderr)
-                raise
+                # echo( fmt"Error processing '{line}' of '{pkg}/{msg}': '{err}'",)
+                raise err
             last_element = fields[-1]
 
         else:
             # line contains a constant
-            let (name, value) = rest.partition(CONSTANT_SEPARATOR)
+            var (name, value) = rest.partition($CONSTANT_SEPARATOR)
             name = name.rstrip()
             value = value.lstrip()
             constants.append(Constant(type_string, name, value))
@@ -491,8 +487,8 @@ proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageS
 
         # add "unused" comments to the field / constant
         comment_lines = last_element.annotations.setdefault(
-            'comment', [])
-        comment_lines += current_comments
+            "comment", [])
+        comment_lines.add current_comments
         current_comments = []
 
     msg = MessageSpecification(pkg_name, msg_name, fields, constants)
