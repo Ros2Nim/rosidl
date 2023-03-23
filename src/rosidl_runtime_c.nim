@@ -1,7 +1,7 @@
 import
    rosidl_runtime_c/action_type_support_struct,
    rosidl_runtime_c/message_initialization,
-   # rosidl_runtime_c/message_type_support_struct,
+   rosidl_runtime_c/message_type_support_struct,
    rosidl_runtime_c/primitives_sequence,
    rosidl_runtime_c/primitives_sequence_functions,
    rosidl_runtime_c/sequence_bound,
@@ -16,7 +16,7 @@ import
 export
    action_type_support_struct,
    message_initialization,
-   # message_type_support_struct,
+   message_type_support_struct,
    primitives_sequence,
    primitives_sequence_functions,
    sequence_bound,
