@@ -106,8 +106,8 @@ type
         string_upper_bound*: int
     Type* = ref object
         is_array*: bool
-        array_size*: bool
         is_upper_bound*: bool
+        array_size*: int
         base*: BaseType
 
     Constant* = ref object
@@ -168,44 +168,44 @@ proc newBaseType*(type_string: string, context_package_name=""): BaseType =
         result.string_upper_bound = -1
 
 proc newType*(type_string: string, context_package_name=""): Type =
-
+    new result
     # check for array brackets
-    self.is_array = type_string[-1] == ']'
+    var type_string = type_string
+    result.is_array = type_string[-1] == ']'
 
-    self.array_size = None
-    self.is_upper_bound = False
-    if self.is_array:
-        try:
-            index = type_string.rindex('[')
-        except ValueError:
-            raise TypeError("the type ends with ']' but does not " +
-                            "contain a '['" % type_string)
-        array_size_string = type_string[index + 1:-1]
+    result.array_size = -1
+    result.is_upper_bound = false
+    if result.is_array:
+        let index: int = type_string.find('[')
+        if index == -1:
+            raise newException(ValueError, ("the type ends with ']' but does not " &
+                            "contain a '['") % [type_string])
+        var array_size_string = type_string[index + 1..^1]
         # get array limit
-        if array_size_string != '':
+        if array_size_string != "":
 
             # check if the limit is an upper bound
-            self.is_upper_bound = array_size_string.startswith(
+            result.is_upper_bound = array_size_string.startswith(
                 ARRAY_UPPER_BOUND_TOKEN)
-            if self.is_upper_bound:
+            if result.is_upper_bound:
                 array_size_string = array_size_string[
-                    len(ARRAY_UPPER_BOUND_TOKEN):]
+                    len(ARRAY_UPPER_BOUND_TOKEN)..^1]
 
-            ex = TypeError((
-                "the size of array type '%s' must be a valid integer " +
-                "value > 0 optionally prefixed with '%s' if it is only " +
-                'an upper bound') %
-                (ARRAY_UPPER_BOUND_TOKEN, type_string))
+            let ex = newException(ValueError, (
+                "the size of array type '$1' must be a valid integer " &
+                "value > 0 optionally prefixed with '$2' if it is only " &
+                "an upper bound") %
+                [ARRAY_UPPER_BOUND_TOKEN, type_string])
             try:
-                self.array_size = int(array_size_string)
+                result.array_size = parseInt(array_size_string)
             except ValueError:
                 raise ex
             # check valid range
-            if self.array_size <= 0:
+            if result.array_size <= 0:
                 raise ex
 
-        type_string = type_string[:index]
+        type_string = type_string[0..<index]
 
-    super(Type, self).__init__(
+    result.base = newBaseType(
         type_string,
         context_package_name=context_package_name)
