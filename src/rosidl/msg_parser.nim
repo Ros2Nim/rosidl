@@ -1,5 +1,5 @@
-import std / [strutils, strformat, sequtils, re, tables]
-import patty
+import std / [strutils, strformat, sequtils, tables]
+import patty, regex
 
 const PACKAGE_NAME_MESSAGE_typSEPARATOR* = "/"
 const COMMENT_DELIMITER* = '#'
@@ -43,7 +43,7 @@ const PRIMITIVE_TYPES* = [
     "time",  # for compatibility only
 ]
 
-let VALID_PACKAGE_NAME_PATTERN: Regex = rex"""
+let VALID_PACKAGE_NAME_PATTERN: Regex = re"""(?x)
     ^
     (?!.*__)    # no consecutive underscores
     (?!.*_$)    # no underscore at the end
@@ -62,8 +62,9 @@ let
     VALID_CONSTANT_NAME_PATTERN = re"^[A-Z]([A-Z0-9_]?[A-Z0-9]+)*$"
 
 proc is_valid_field_name*(name: string): bool =
-    if name =~ VALID_FIELD_NAME_PATTERN:
-        return matches[0] == name
+    var m: RegexMatch
+    if name.match(VALID_FIELD_NAME_PATTERN, m):
+        return m.groupFirstCapture(0, name) == name
 
 proc is_valid_message_name*(name: string): bool =
     var name = name
@@ -80,16 +81,19 @@ proc is_valid_message_name*(name: string): bool =
     for suffix in suffixes:
         if name.endswith(suffix):
             name = name[0..^len(suffix)]
-    if name =~ VALID_MESSAGE_NAME_PATTERN:
-        return matches[0] == name
+    var m: RegexMatch
+    if name.match(VALID_MESSAGE_NAME_PATTERN, m):
+        return m.groupFirstCapture(0, name) == name
 
 proc is_valid_constant_name*(name: string): bool =
-    if name =~ VALID_CONSTANT_NAME_PATTERN:
-        return matches[0] == name
+    var m: RegexMatch
+    if name.match(VALID_CONSTANT_NAME_PATTERN, m):
+        return m.groupFirstCapture(0, name) == name
 
 proc is_valid_package_name*(name: string): bool =
-    if name =~ VALID_PACKAGE_NAME_PATTERN:
-        return matches[0] == name
+    var m: RegexMatch
+    if name.match(VALID_PACKAGE_NAME_PATTERN, m):
+        return m.groupFirstCapture(0, name) == name
 
 type
     InvalidSpecification* = object of Exception
@@ -408,7 +412,8 @@ proc parse_primitive_value_string(typ: Type, value_string: string): MsgVal =
         for quote in ["'", "\""]:
             if value_string.startswith(quote) and value_string.endswith(quote):
                 value_string = value_string[1..^1]
-                if value_string =~ re("(?<!\\)" & quote):
+                var m: RegexMatch
+                if value_string .match(re("(?<!\\)" & quote), m):
                     raise newException(InvalidValue,
                         $primitive_type & " / " & value_string &
                         "string inner quotes not properly escaped")
@@ -523,35 +528,36 @@ proc process_comments(instance: BaseField) =
 
         # look for a unit in brackets
         # the unit should not contains a comma since it might be a range
-        # let
-        #     comment = lines.join("\n")
-        #     matches = comment.findall(re"(\s*\[([^,\]]+)\])")
+        let
+            comment = lines.join("\n")
+            matches = comment.findall(re"(\s*\[([^,\]]+)\])")
         
-        # if len(matches) == 1:
-        #     instance.annotations["unit"].add matches[0]
-        #     # remove the unit from the comment
-        #     for i, line in lines:
-        #         lines[i] = line.replace(matches[0][0], "")
+        if len(matches) == 1:
+            ## checkme
+            instance.annotations["unit"].add matches[0].groupFirstCapture(0, comment)
+            # remove the unit from the comment
+            for i, line in lines:
+                lines[i] = line.replace(matches[0].groupFirstCapture(0, line), "")
 
         # remove empty leading lines
 
-        # while lines and lines[0] == "":
-        #     del lines[0]
-        # # remove empty trailing lines
-        # while lines and lines[-1] == "":
-        #     del lines[-1]
-        # # remove consecutive empty lines
-        # length = len(lines)
-        # i = 1
-        # while i < length:
-        #     if lines[i] == "" and lines[i - 1] == "":
-        #         lines[i - 1:i + 1] = [""]
-        #         length -= 1
-        #         continue
-        #     i += 1
-        # if lines:
-        #     text = "\n".join(lines)
-        #     instance.annotations["comment"] = textwrap.dedent(text).split("\n")
+        while lines.len() > 0 and lines[0] == "":
+            lines.delete(0)
+        # remove empty trailing lines
+        while lines.len() > 0 and lines[^1] == "":
+            lines.delete(lines.high)
+        # remove consecutive empty lines
+        var length = len(lines)
+        var i = 1
+        while i < length:
+            if lines[i] == "" and lines[i - 1] == "":
+                lines[i - 1..<i + 1] = [""]
+                length -= 1
+                continue
+            i += 1
+        if lines.len() > 0:
+            var text = lines.join("\n")
+            instance.annotations["comment"] = dedent(text).split("\n")
 
 proc parse_value_string(typ: Type, value_string: string): MsgVal =
     if typ.is_primitive_type() and not typ.is_array:
