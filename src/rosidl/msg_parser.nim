@@ -644,20 +644,21 @@ proc parse_string_array_value_string(element_string: string, expected_size: int)
                     raise newException(ValueError, "string [$1] incorrectly quoted\n$2" % [
                         $element_string, $value_strings])
                 else:
-                    value_string = element_string[1:end_quote_idx + 1]
-                    value_string = value_string.replace("\\" + quote, quote)
-                    value_strings.append(value_string)
-                    element_string = element_string[end_quote_idx + 2:]
+                    var value_string = ""
+                    value_string = element_string[1..<end_quote_idx + 1]
+                    value_string = value_string.replace("\\" & quote, quote)
+                    value_strings.add(value_string)
+                    element_string = element_string[end_quote_idx + 2..^1]
         if not quoted_value:
-            next_comma_idx = element_string.find(",")
+            var next_comma_idx = element_string.find(",")
             if next_comma_idx == -1:
-                value_strings.append(element_string)
+                value_strings.add(element_string)
                 element_string = ""
             else:
-                value_strings.append(element_string[:next_comma_idx])
-                element_string = element_string[next_comma_idx:]
-        element_string = element_string.lstrip(" ")
-        if len(element_string) > 0 and element_string[0] == ",":
-            element_string = element_string[1:]
+                value_strings.add(element_string[0..<next_comma_idx])
+                element_string = element_string[next_comma_idx..^1]
+        element_string = element_string.lstrip({' '})
+        if len(element_string) > 0 and element_string[0] == ',':
+            element_string = element_string[1..^1]
     return value_strings
 
