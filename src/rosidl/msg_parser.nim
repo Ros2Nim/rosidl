@@ -121,7 +121,7 @@ type
         base*: BaseType
 
     BaseField* = ref object of RootObj
-        annotations*: Table[string, seq[string]]
+        annotations*: TableRef[string, seq[string]]
     
     Constant* = ref object of BaseField
         typ*: string
@@ -498,38 +498,39 @@ proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageS
 
 proc process_comments(instance: BaseField) =
     if "comment" in instance.annotations:
-        let lines = instance.annotations["comment"]
+        var lines = instance.annotations["comment"]
 
         # look for a unit in brackets
         # the unit should not contains a comma since it might be a range
-        let
-            comment = lines.join("\n")
-            matches = comment.findall(re"(\s*\[([^,\]]+)\])")
+        # let
+        #     comment = lines.join("\n")
+        #     matches = comment.findall(re"(\s*\[([^,\]]+)\])")
         
-        if len(matches) == 1:
-            instance.annotations["unit"] = matches[0]
-            # remove the unit from the comment
-            for i, line in enumerate(lines):
-                lines[i] = line.replace(matches[0][0], "")
+        # if len(matches) == 1:
+        #     instance.annotations["unit"].add matches[0]
+        #     # remove the unit from the comment
+        #     for i, line in lines:
+        #         lines[i] = line.replace(matches[0][0], "")
 
         # remove empty leading lines
-        while lines and lines[0] == "":
-            del lines[0]
-        # remove empty trailing lines
-        while lines and lines[-1] == "":
-            del lines[-1]
-        # remove consecutive empty lines
-        length = len(lines)
-        i = 1
-        while i < length:
-            if lines[i] == "" and lines[i - 1] == "":
-                lines[i - 1:i + 1] = [""]
-                length -= 1
-                continue
-            i += 1
-        if lines:
-            text = "\n".join(lines)
-            instance.annotations["comment"] = textwrap.dedent(text).split("\n")
+
+        # while lines and lines[0] == "":
+        #     del lines[0]
+        # # remove empty trailing lines
+        # while lines and lines[-1] == "":
+        #     del lines[-1]
+        # # remove consecutive empty lines
+        # length = len(lines)
+        # i = 1
+        # while i < length:
+        #     if lines[i] == "" and lines[i - 1] == "":
+        #         lines[i - 1:i + 1] = [""]
+        #         length -= 1
+        #         continue
+        #     i += 1
+        # if lines:
+        #     text = "\n".join(lines)
+        #     instance.annotations["comment"] = textwrap.dedent(text).split("\n")
 
 
 proc parse_value_string(type_, value_string): bool =
