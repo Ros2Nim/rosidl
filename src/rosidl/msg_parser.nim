@@ -101,6 +101,7 @@ type
     InvalidValue* = object of Exception
 
 variantp MsgVal:
+  MNone
   MBool(bval: bool)
   MByte(cval: byte)
   MInt(ival: int64)
@@ -109,16 +110,15 @@ variantp MsgVal:
   MString(sval: string)
 
 type
-    BaseType* = ref object
+    BaseType* = ref object of RootObj
         pkg_name*: string
         typ*: string
         string_upper_bound*: int
 
-    Type* = ref object
+    Type* = ref object of BaseType
         is_array*: bool
         is_upper_bound*: bool
         array_size*: int
-        base*: BaseType
 
     BaseField* = ref object of RootObj
         annotations*: TableRef[string, seq[string]]
@@ -126,20 +126,19 @@ type
     Constant* = ref object of BaseField
         typ*: string
         name*: string
-        value*: BaseField
+        value*: MsgVal
 
     Field* = ref object of BaseField
         name*: string
         typ*: Type
+        default_value*: MsgVal
 
 
-proc parse_primitive_value_string(typ: Type, value_string: string): BaseField
+proc parse_primitive_value_string(typ: Type, value_string: string): MsgVal
+proc parse_value_string(typ: Type, value_string: string): MsgVal
 
 proc is_primitive_type*(self: BaseType): bool =
     return self.pkg_name == ""
-
-proc is_primitive_type*(self: Type): bool =
-    return self.base.pkg_name == ""
 
 proc is_dynamic_array*(self: Type): bool =
     return self.is_array and (self.array_size > -1 or self.is_upper_bound)
@@ -147,7 +146,7 @@ proc is_dynamic_array*(self: Type): bool =
 proc is_fixed_size_array*(self: Type): bool =
     return self.is_array and self.array_size > -1 and not self.is_upper_bound
 
-proc newBaseType*(typstring: string, context_package_name=""): BaseType =
+proc setupBaseType*(result: var BaseType, typstring: string, context_package_name="") =
     new result
     # check for primitive types
     if typstring in PRIMITIVE_TYPES:
@@ -195,8 +194,13 @@ proc newBaseType*(typstring: string, context_package_name=""): BaseType =
 
         result.string_upper_bound = -1
 
-proc newType*(typstring: string, context_package_name=""): Type =
+proc newBaseType*(typstring: string, context_package_name=""): BaseType =
     new result
+    result.setupBaseType(typstring, context_package_name)
+
+proc newType*(typstring: string, context_package_name=""): Type =
+    result.new
+
     # check for array brackets
     var typstring = typstring
     result.is_array = "]" in typstring
@@ -234,9 +238,7 @@ proc newType*(typstring: string, context_package_name=""): Type =
 
         typstring = typstring[0..<index]
 
-    result.base = newBaseType(
-        typstring,
-        context_package_name=context_package_name)
+    result.BaseType.setupBaseType(typstring, context_package_name)
 
 proc newConstant*(primitive_type, name, value_string: string): Constant =
     if primitive_type notin PRIMITIVE_TYPES:
@@ -258,12 +260,12 @@ proc newField*(typ: Type, name: string, default_value_string=""): Field =
     if not is_valid_field_name(name):
         raise newException(ValueError, "`$1` is an invalid field name. " % [name])
     result.name = name
-    # if default_value_string == "":
-    #     result.default_value = None
-    # else:
-    #     self.default_value = parse_value_string(
-    #         type_, default_value_string)
-    # self.annotations = {}
+    if default_value_string == "":
+        result.default_value = MNone()
+    else:
+        result.default_value =
+            parse_value_string(typ, default_value_string)
+    result.annotations.new
 
 
 
@@ -278,7 +280,7 @@ type
         msg_name*: string
         fields*: seq[Field]
         constants*: seq[Constant]
-        annotations*: Table[string, seq[string]]
+        annotations*: TableRef[string, seq[string]]
 
 proc newMessageSpecification*(pkg_name, msg_name: string, fields: seq[Field], constants: seq[Constant]): MessageSpecification =
     new result
@@ -319,10 +321,10 @@ proc partition(line, sep: string): (string, string) =
     let ln = line.split(sep)
     (ln[0], ln[1])
 
-proc parse_primitive_value_string(typ: Type, value_string: string): BaseField =
+proc parse_primitive_value_string(typ: Type, value_string: string): MsgVal =
     if not typ.is_primitive_type() or typ.is_array:
         raise newException(ValueError,"the passed type must be a non-array primitive type")
-    let primitive_type = typ.base.typ
+    let primitive_type = typ.typ
 
     if primitive_type == "bool":
         let
@@ -395,11 +397,11 @@ proc parse_primitive_value_string(typ: Type, value_string: string): BaseField =
                 break
 
         # check that value is in valid range
-        if len(value_string) > typ.base.string_upper_bound:
+        if len(value_string) > typ.string_upper_bound:
             raise newException(InvalidValue,
-                $typ.base.typ & " / " & value_string &
+                $typ.typ & " / " & value_string &
                 "string must not exceed the maximum length of $1 characters" %
-                [$typ.base.string_upper_bound])
+                [$typ.string_upper_bound])
 
         return MString value_string
 
@@ -533,19 +535,18 @@ proc process_comments(instance: BaseField) =
         #     instance.annotations["comment"] = textwrap.dedent(text).split("\n")
 
 
-proc parse_value_string(typ: Type, value_string: string): BaseField =
+proc parse_value_string(typ: Type, value_string: string): MsgVal =
     if typ.is_primitive_type() and not typ.is_array:
         return parse_primitive_value_string(typ, value_string)
 
     if typ.is_primitive_type() and typ.is_array:
         # check for array brackets
         if not value_string.startswith("[") or not value_string.endswith("]"):
-            raise InvalidValue(
-                type_, value_string,
-                "array value must start with "[" and end with "]"")
-        elements_string = value_string[1:-1]
+            raise newException(InvalidValue,
+                "array value must start with `[` and end with `]`")
+        var elements_string = value_string[1..^1]
 
-        if type_.type in ("string", "wstring"):
+        if typ.typ in ("string", "wstring"):
             # String arrays need special processing as the comma can be part of a quoted string
             # and not a separator of array elements
             value_strings = parse_string_array_value_string(elements_string, type_.array_size)
