@@ -60,11 +60,11 @@ let
     # VALID_MESSAGE_NAME_PATTERN = re.compile("^[A-Za-z][A-Za-z0-9]*$")
     VALID_CONSTANT_NAME_PATTERN = re"^[A-Z]([A-Z0-9_]?[A-Z0-9]+)*$"
 
-proc is_valid_field_name(name: string): bool =
+proc is_valid_field_name*(name: string): bool =
     if name =~ VALID_FIELD_NAME_PATTERN:
         return matches[0] == name
 
-proc is_valid_message_name(name: string): bool =
+proc is_valid_message_name*(name: string): bool =
     var name = name
     let prefix = "Sample_"
     if name.startswith(prefix):
@@ -82,8 +82,12 @@ proc is_valid_message_name(name: string): bool =
     if name =~ VALID_MESSAGE_NAME_PATTERN:
         return matches[0] == name
 
-proc is_valid_constant_name(name: string): bool =
+proc is_valid_constant_name*(name: string): bool =
     if name =~ VALID_CONSTANT_NAME_PATTERN:
+        return matches[0] == name
+
+proc is_valid_package_name*(name: string): bool =
+    if name =~ VALID_PACKAGE_NAME_PATTERN:
         return matches[0] == name
 
 type
@@ -104,6 +108,7 @@ type
         is_array*: bool
         array_size*: bool
         is_upper_bound*: bool
+        base*: BaseType
 
     Constant* = ref object
 
@@ -111,10 +116,8 @@ type
         name*: string
         typ*: Type
 
-proc is_valid_package_name(name: string): bool =
-    if name =~ VALID_PACKAGE_NAME_PATTERN:
-        return matches[0] == name
-
+proc is_primitive_type*(self: BaseType): bool =
+    return self.pkg_name == ""
 
 proc new*(typ: typedesc[BaseType], type_string: string, context_package_name=""): BaseType =
     new result
