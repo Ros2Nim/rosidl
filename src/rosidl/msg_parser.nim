@@ -105,6 +105,7 @@ variantp MsgVal:
   MByte(cval: byte)
   MInt(ival: int64)
   MUInt(uval: uint64)
+  MFloat(fval: float)
   MString(sval: string)
 
 type
@@ -133,6 +134,9 @@ proc parse_primitive_value_string(typ: Type, value_string: string): MsgVal
 
 proc is_primitive_type*(self: BaseType): bool =
     return self.pkg_name == ""
+
+proc is_primitive_type*(self: Type): bool =
+    return self.base.pkg_name == ""
 
 proc is_dynamic_array*(self: Type): bool =
     return self.is_array and (self.array_size > -1 or self.is_upper_bound)
@@ -250,41 +254,35 @@ proc newConstant*(primitive_type, name, value_string: string): Constant =
 
 proc parse_primitive_value_string(typ: Type, value_string: string): MsgVal =
     if not typ.is_primitive_type() or typ.is_array:
-        raise ValueError("the passed type must be a non-array primitive type")
-    primitive_type = typ.type
+        raise newException(ValueError,"the passed type must be a non-array primitive type")
+    let primitive_type = typ.base.typ
 
     if primitive_type == "bool":
-        true_values = ["true", "1"]
-        false_values = ["false", "0"]
-        if value_string.lower() not in (true_values + false_values):
-            raise InvalidValue(
-                primitive_type, value_string,
-                "must be either "true" / "1" or "false" / "0"")
-        return value_string.lower() in true_values
+        let
+            true_values = ["true", "1"]
+            false_values = ["false", "0"]
 
-    if primitive_type in ("byte", "char"):
+        let vstr = value_string.toLowerAscii()
+        if vstr notin true_values and vstr notin false_values:
+            raise newException(InvalidValue,
+                $primitive_type & " / " & value_string &
+                "must be either `true` / `1` or `false` / `0`")
+        return MBool(vstr in true_values)
+
+    if primitive_type in ["byte", "char"]:
         # same as uint8
-        ex = InvalidValue(primitive_type, value_string,
+        let ex = newException(InvalidValue,
+                $primitive_type & " / " & value_string &
                           "must be a valid integer value >= 0 and <= 255")
-        try:
-            value = int(value_string)
-        except ValueError:
-            try:
-                value = int(value_string, 0)
-            except ValueError:
-                raise ex
-
-        if value < 0 or value > 255:
-            raise ex
-        return value
+        return MByte parseInt(value_string).byte
 
     if primitive_type in ["float32", "float64"]:
         try:
-            return float(value_string)
+            return MFloat parseFloat(value_string)
         except ValueError:
-            raise InvalidValue(
-                primitive_type, value_string,
-                "must be a floating point number using "." as the separator")
+            raise newException(InvalidValue,
+                $primitive_type & " / " & value_string &
+                "must be a floating point number using `.` as the separator")
 
     if primitive_type in [
         "int8", "uint8",
@@ -293,52 +291,50 @@ proc parse_primitive_value_string(typ: Type, value_string: string): MsgVal =
         "int64", "uint64",
     ]:
         # determine lower and upper bound
-        is_unsigned = primitive_type.startswith("u")
-        bits = int(primitive_type[4 if is_unsigned else 3:])
-        lower_bound = 0 if is_unsigned else -(2 ** (bits - 1))
-        upper_bound = (2 ** (bits if is_unsigned else (bits - 1))) - 1
+        let is_unsigned = primitive_type.startswith("u")
 
-        ex = InvalidValue(primitive_type, value_string,
-                          "must be a valid integer value >= %d and <= %u" %
-                          (lower_bound, upper_bound))
+        if is_unsigned:
+            let val = parseUInt(primitive_type)
+            result = 
+                case primitive_type:
+                of "uint8": MUInt(uint8 val)
+                of "uint16": MUInt(uint16 val)
+                of "uint32": MUInt(uint32 val)
+                of "uint64": MUInt(uint64 val)
+                else:
+                    raise newException(ValueError, "unknown type")
+        else:
+            let val = parseInt(primitive_type)
+            result = 
+                case primitive_type:
+                of "int8": MInt(int8 val)
+                of "int16": MInt(int16 val)
+                of "int32": MInt(int32 val)
+                of "int64": MInt(int64 val)
+                else:
+                    raise newException(ValueError, "unknown type")
 
-        try:
-            value = int(value_string)
-        except ValueError:
-            try:
-                value = int(value_string, 0)
-            except ValueError:
-                raise ex
-
-        # check that value is in valid range
-        if value < lower_bound or value > upper_bound:
-            raise ex
-
-        return value
-
-    if primitive_type in ("string", "wstring"):
+    if primitive_type in ["string", "wstring"]:
         # remove outer quotes to allow leading / trailing spaces in the string
-        for quote in [""", """]:
+        var value_string = value_string
+        for quote in ["'", "\""]:
             if value_string.startswith(quote) and value_string.endswith(quote):
-                value_string = value_string[1:-1]
-                match = re.search(r"(?<!\\)%s" % quote, value_string)
-                if match is not None:
-                    raise InvalidValue(
-                        primitive_type,
-                        value_string,
+                value_string = value_string[1..^1]
+                if value_string =~ re("(?<!\\)" & quote):
+                    raise newException(InvalidValue,
+                        $primitive_type & " / " & value_string &
                         "string inner quotes not properly escaped")
-                value_string = value_string.replace("\\" + quote, quote)
+                value_string = value_string.replace("\\" & quote, quote)
                 break
 
         # check that value is in valid range
-        if typ.string_upper_bound and \
-                len(value_string) > typ.string_upper_bound:
-            base_type = Type(BaseType.__str__(typ))
-            raise InvalidValue(
-                base_type, value_string,
-                "string must not exceed the maximum length of %u characters" %
-                typ.string_upper_bound)
+        if len(value_string) > typ.base.string_upper_bound:
+            raise newException(InvalidValue,
+                $typ.base.typ & " / " & value_string &
+                "string must not exceed the maximum length of $1 characters" %
+                [$typ.base.string_upper_bound])
 
-        return value_string
+        return MString value_string
 
-    assert False, "unknown primitive type "%s"" % primitive_type
+    raise newException(InvalidValue,
+                "unknown primitive type `$1`" % [primitive_type])
