@@ -553,7 +553,6 @@ proc process_comments(instance: BaseField) =
         #     text = "\n".join(lines)
         #     instance.annotations["comment"] = textwrap.dedent(text).split("\n")
 
-
 proc parse_value_string(typ: Type, value_string: string): MsgVal =
     if typ.is_primitive_type() and not typ.is_array:
         return parse_primitive_value_string(typ, value_string)
@@ -605,25 +604,45 @@ proc parse_value_string(typ: Type, value_string: string): MsgVal =
     raise newException(ValueError,
         "parsing string values into type `$1` is not supported" % [$typ])
 
+proc find_matching_end_quote(str, quote: string): int =
+    # Given a string, walk it and find the next unescapted quote
+    # returns the index of the ending quote if successful, -1 otherwise
+    var str = str
+    var ending_quote_idx = -1
+    var final_quote_idx = 0
+    while len(str) > 0:
+        ending_quote_idx = str[1..^1].find(quote)
+        if ending_quote_idx == -1:
+            return -1
+        if str[ending_quote_idx..<ending_quote_idx + 2] != "\\" & quote:
+            # found a matching end quote that is not escaped
+            return final_quote_idx + ending_quote_idx
+        else:
+            str = str[ending_quote_idx + 2..^1]
+            final_quote_idx = ending_quote_idx + 2
+    return -1
+
 
 proc parse_string_array_value_string(element_string: string, expected_size: int): seq[string] =
     # Walks the string, if start with quote (" or ") find next unescapted quote,
     # returns a list of string elements
-    value_strings = []
+    var value_strings: seq[string]
+    var element_string: string
     while len(element_string) > 0:
-        element_string = element_string.lstrip(" ")
-        if element_string[0] == ",":
-            raise ValueError("unxepected "," at beginning of [%s]" % element_string)
+        element_string = element_string.lstrip({' '})
+        if element_string[0] == ',':
+            raise newException(ValueError,"unxepected `,` at beginning of [%s]" % [element_string])
         if len(element_string) == 0:
             return value_strings
-        quoted_value = False
-        for quote in [""", """]:
+        var quoted_value = false
+        var end_quote_idx = -1
+        for quote in ["\"", "'"]:
             if element_string.startswith(quote):
-                quoted_value = True
+                quoted_value = true
                 end_quote_idx = find_matching_end_quote(element_string, quote)
                 if end_quote_idx == -1:
-                    raise ValueError("string [%s] incorrectly quoted\n%s" % (
-                        element_string, value_strings))
+                    raise newException(ValueError, "string [$1] incorrectly quoted\n$2" % [
+                        $element_string, $value_strings])
                 else:
                     value_string = element_string[1:end_quote_idx + 1]
                     value_string = value_string.replace("\\" + quote, quote)
@@ -642,20 +661,3 @@ proc parse_string_array_value_string(element_string: string, expected_size: int)
             element_string = element_string[1:]
     return value_strings
 
-
-def find_matching_end_quote(string, quote):
-    # Given a string, walk it and find the next unescapted quote
-    # returns the index of the ending quote if successful, -1 otherwise
-    ending_quote_idx = -1
-    final_quote_idx = 0
-    while len(string) > 0:
-        ending_quote_idx = string[1:].find(quote)
-        if ending_quote_idx == -1:
-            return -1
-        if string[ending_quote_idx:ending_quote_idx + 2] != "\\%s" % quote:
-            # found a matching end quote that is not escaped
-            return final_quote_idx + ending_quote_idx
-        else:
-            string = string[ending_quote_idx + 2:]
-            final_quote_idx = ending_quote_idx + 2
-    return -1
