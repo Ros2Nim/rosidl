@@ -119,7 +119,7 @@ type
 proc is_primitive_type*(self: BaseType): bool =
     return self.pkg_name == ""
 
-proc new*(typ: typedesc[BaseType], type_string: string, context_package_name=""): BaseType =
+proc newBaseType*(type_string: string, context_package_name=""): BaseType =
     new result
     # check for primitive types
     if type_string in PRIMITIVE_TYPES:
@@ -134,10 +134,10 @@ proc new*(typ: typedesc[BaseType], type_string: string, context_package_name="")
         let upper_bound_string = type_string[len(result.typ) +
                                           len(STRING_UPPER_BOUND_TOKEN) .. ^1]
 
-        var ex = newException(TypeError, ("the upper bound of the string type "%s" must " &
+        var ex = newException(ValueError, ("the upper bound of the string type '$1' must " &
                         "be a valid integer value > 0") % [type_string])
         try:
-            result.string_upper_bound = int(upper_bound_string)
+            result.string_upper_bound = parseInt(upper_bound_string)
         except ValueError:
             raise ex
         if result.string_upper_bound <= 0:
@@ -160,11 +160,52 @@ proc new*(typ: typedesc[BaseType], type_string: string, context_package_name="")
             result.typ = type_string
         if not is_valid_package_name(result.pkg_name):
             raise newException(InvalidResourceName,
-                "'$1' is an invalid package name. It should have the pattern '$2'" % [
-                    result.pkg_name, VALID_PACKAGE_NAME_PATTERN.pattern])
-        if not is_valid_message_name(result.type):
+                "'$1' is an invalid package name. " % [result.pkg_name])
+        if not is_valid_message_name(result.typ):
             raise newException(InvalidResourceName,
-                "'$1' is an invalid message name. It should have the pattern '$2'" % [
-                    result.type, VALID_MESSAGE_NAME_PATTERN.pattern])
+                "'$1' is an invalid message name." % [result.typ])
 
         result.string_upper_bound = -1
+
+proc newType*(type_string: string, context_package_name=""): Type =
+
+    # check for array brackets
+    self.is_array = type_string[-1] == ']'
+
+    self.array_size = None
+    self.is_upper_bound = False
+    if self.is_array:
+        try:
+            index = type_string.rindex('[')
+        except ValueError:
+            raise TypeError("the type ends with ']' but does not " +
+                            "contain a '['" % type_string)
+        array_size_string = type_string[index + 1:-1]
+        # get array limit
+        if array_size_string != '':
+
+            # check if the limit is an upper bound
+            self.is_upper_bound = array_size_string.startswith(
+                ARRAY_UPPER_BOUND_TOKEN)
+            if self.is_upper_bound:
+                array_size_string = array_size_string[
+                    len(ARRAY_UPPER_BOUND_TOKEN):]
+
+            ex = TypeError((
+                "the size of array type '%s' must be a valid integer " +
+                "value > 0 optionally prefixed with '%s' if it is only " +
+                'an upper bound') %
+                (ARRAY_UPPER_BOUND_TOKEN, type_string))
+            try:
+                self.array_size = int(array_size_string)
+            except ValueError:
+                raise ex
+            # check valid range
+            if self.array_size <= 0:
+                raise ex
+
+        type_string = type_string[:index]
+
+    super(Type, self).__init__(
+        type_string,
+        context_package_name=context_package_name)
