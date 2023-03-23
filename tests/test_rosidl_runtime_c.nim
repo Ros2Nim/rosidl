@@ -7,8 +7,8 @@
 
 import unittest
 
-import rosidl
-export rosidl
+import rosidl_runtime_c
+export rosidl_runtime_c
 
-test "can add":
-  check 5 + 5 == 10
+test "can compile":
+  check true
