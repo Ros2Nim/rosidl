@@ -134,8 +134,26 @@ type
         default_value*: MsgVal
 
 
+proc `$`*(self: BaseType): string =
+    if self.pkg_name != "":
+        return self.pkg_name & "/" & self.typ
+    result = self.typ
+    if self.string_upper_bound > -1:
+        result.add STRING_UPPER_BOUND_TOKEN & $self.string_upper_bound
+
+proc `$`*(self: Type): string =
+    result = $(self.BaseType)
+    if self.is_array:
+        result.add '['
+        if self.is_upper_bound:
+            result.add ARRAY_UPPER_BOUND_TOKEN
+        if self.array_size > -1:
+            result.add $self.array_size
+        result.add ']'
+
 proc parse_primitive_value_string(typ: Type, value_string: string): MsgVal
 proc parse_value_string(typ: Type, value_string: string): MsgVal
+proc parse_string_array_value_string(element_string: string, expected_size: int): seq[string]
 
 proc is_primitive_type*(self: BaseType): bool =
     return self.pkg_name == ""
@@ -453,7 +471,7 @@ proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageS
             if line != "":
                 continue
 
-        let (type_string, mrest) = line.partition(" ")
+        let (typstring, mrest) = line.partition(" ")
         var rest = mrest.lstrip()
 
         if rest == "":
@@ -466,7 +484,7 @@ proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageS
             let default_value_string = mdefault_value_string.lstrip()
             try:
                 fields.add(newField(
-                    newType(type_string, context_package_name=pkg_name),
+                    newType(typstring, context_package_name=pkg_name),
                     field_name, default_value_string))
             except Exception as err:
                 # echo( fmt"Error processing "{line}" of "{pkg}/{msg}": "{err}"",)
@@ -478,7 +496,7 @@ proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageS
             var (name, value) = rest.partition($CONSTANT_SEPARATOR)
             name = name.rstrip()
             value = value.lstrip()
-            constants.add(newConstant(type_string, name, value))
+            constants.add(newConstant(typstring, name, value))
             last_element = constants[-1]
 
         # add "unused" comments to the field / constant
@@ -546,45 +564,48 @@ proc parse_value_string(typ: Type, value_string: string): MsgVal =
                 "array value must start with `[` and end with `]`")
         var elements_string = value_string[1..^1]
 
-        if typ.typ in ("string", "wstring"):
+        var value_strings: seq[string]
+        if typ.typ in ["string", "wstring"]:
             # String arrays need special processing as the comma can be part of a quoted string
             # and not a separator of array elements
-            value_strings = parse_string_array_value_string(elements_string, type_.array_size)
+            value_strings = parse_string_array_value_string(
+                elements_string, typ.array_size)
         else:
-            value_strings = elements_string.split(",") if elements_string else []
-        if type_.array_size:
+            # value_strings = elements_string.split(",") if elements_string else []
+            if elements_string != "":
+                value_strings = elements_string.split(",")
+        if typ.array_size > -1:
             # check for exact size
-            if not type_.is_upper_bound and \
-                    len(value_strings) != type_.array_size:
-                raise InvalidValue(
-                    type_, value_string,
-                    "array must have exactly %u elements, not %u" %
-                    (type_.array_size, len(value_strings)))
+            if not typ.is_upper_bound and len(value_strings) != typ.array_size:
+                raise newException(InvalidValue,
+                    $typ & " / " & value_string &
+                    "array must have exactly $1 elements, not $2" %
+                    [$typ.array_size, $len(value_strings)])
             # check for upper bound
-            if type_.is_upper_bound and len(value_strings) > type_.array_size:
-                raise InvalidValue(
-                    type_, value_string,
-                    "array must have not more than %u elements, not %u" %
-                    (type_.array_size, len(value_strings)))
+            if typ.is_upper_bound and len(value_strings) > typ.array_size:
+                raise newException(InvalidValue,
+                    $typ & " / " & value_string &
+                    "array must have not more than $1 elements, not $2" %
+                    [$typ.array_size, $len(value_strings)])
 
         # parse all primitive values one by one
-        values = []
-        for index, element_string in enumerate(value_strings):
-            element_string = element_string.strip()
+        var values: seq[string]
+        for index, element_string in value_strings:
+            var element_string = element_string.strip()
             try:
-                base_type = Type(BaseType.__str__(type_))
+                base_type = Type(BaseType.__str__(typ))
                 value = parse_primitive_value_string(base_type, element_string)
             except InvalidValue as e:
                 raise InvalidValue(
-                    type_, value_string, "element %u with %s" % (index, e))
+                    typ, value_string, "element %u with %s" % (index, e))
             values.append(value)
         return values
 
     raise NotImplementedError(
-        "parsing string values into type "%s" is not supported" % type_)
+        "parsing string values into type "%s" is not supported" % typ)
 
 
-def parse_string_array_value_string(element_string, expected_size):
+proc parse_string_array_value_string(element_string: string, expected_size: int): seq[string] =
     # Walks the string, if start with quote (" or ") find next unescapted quote,
     # returns a list of string elements
     value_strings = []
