@@ -126,14 +126,14 @@ type
     Constant* = ref object of BaseField
         typ*: string
         name*: string
-        value*: MsgVal
+        value*: BaseField
 
     Field* = ref object of BaseField
         name*: string
         typ*: Type
 
 
-proc parse_primitive_value_string(typ: Type, value_string: string): MsgVal
+proc parse_primitive_value_string(typ: Type, value_string: string): BaseField
 
 proc is_primitive_type*(self: BaseType): bool =
     return self.pkg_name == ""
@@ -319,7 +319,7 @@ proc partition(line, sep: string): (string, string) =
     let ln = line.split(sep)
     (ln[0], ln[1])
 
-proc parse_primitive_value_string(typ: Type, value_string: string): MsgVal =
+proc parse_primitive_value_string(typ: Type, value_string: string): BaseField =
     if not typ.is_primitive_type() or typ.is_array:
         raise newException(ValueError,"the passed type must be a non-array primitive type")
     let primitive_type = typ.base.typ
@@ -533,11 +533,11 @@ proc process_comments(instance: BaseField) =
         #     instance.annotations["comment"] = textwrap.dedent(text).split("\n")
 
 
-proc parse_value_string(type_, value_string): bool =
-    if type_.is_primitive_type() and not type_.is_array:
-        return parse_primitive_value_string(type_, value_string)
+proc parse_value_string(typ: Type, value_string: string): BaseField =
+    if typ.is_primitive_type() and not typ.is_array:
+        return parse_primitive_value_string(typ, value_string)
 
-    if type_.is_primitive_type() and type_.is_array:
+    if typ.is_primitive_type() and typ.is_array:
         # check for array brackets
         if not value_string.startswith("[") or not value_string.endswith("]"):
             raise InvalidValue(
