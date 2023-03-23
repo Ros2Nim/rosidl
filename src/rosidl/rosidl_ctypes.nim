@@ -1,12 +1,8 @@
 import std / [ macros, strutils ]
 
+import msg_parser
+
 proc parse_message_string(pkg_name, msg_name, message_string: string) =
-    var
-      fields: seq[Field]
-      constants: seq[Constant]
-      last_element = ""  # either a field or a constant
-    # replace tabs with spaces
-    message_string = message_string.replace("\t", " ")
 
 
 template msg*(msg: string): untyped =

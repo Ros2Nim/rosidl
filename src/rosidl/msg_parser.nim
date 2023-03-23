@@ -1,4 +1,4 @@
-import std / [strutils, strformat, re, tables]
+import std / [strutils, strformat, sequtils, re, tables]
 import patty
 
 const PACKAGE_NAME_MESSAGE_typSEPARATOR* = "/"
@@ -338,3 +338,123 @@ proc parse_primitive_value_string(typ: Type, value_string: string): MsgVal =
 
     raise newException(InvalidValue,
                 "unknown primitive type `$1`" % [primitive_type])
+
+type
+    MessageSpecification* = ref object
+        pkg_name*: string
+        msg_name*: string
+        fields*: seq[Field]
+        constants*: seq[Constant]
+        annotations*: Table[string, seq[string]]
+
+proc newMessageSpecification*(pkg_name, msg_name: string, fields: seq[Field], constants: seq[Constant]): MessageSpecification =
+    new result
+    result.pkg_name = pkg_name
+    result.msg_name = msg_name
+    result.fields = fields
+    result.constants = constants
+
+    let
+        field_names = fields.mapIt(it.name)
+        duplicate_field_names = toCountTable(field_names)
+    
+    var dupes: seq[string]
+    for f, c in duplicate_field_names:
+        if c > 1: dupes.add f
+    
+    if dupes.len() > 0:
+        raise newException(ValueError,
+                "the fields iterable contains duplicate names: $1" % [dupes.join(",")])
+
+proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageSpecification =
+    var
+        fields: seq[Field]
+        constants: seq[Constant]
+        last_element = ""  # either a field or a constant
+        message_string = message_string.replace("\t", " ")
+        current_comments: seq[string]
+    
+    let
+        message_comments, lines = extract_file_level_comments(message_string)
+    
+    for line in lines:
+        line = line.rstrip()
+
+        # ignore empty lines
+        if not line:
+            # file-level comments stop at the first empty line
+            continue
+
+        index = line.find(COMMENT_DELIMITER)
+
+        # comment
+        comment = None
+        if index >= 0:
+            comment = line[index:].lstrip(COMMENT_DELIMITER)
+            line = line[:index]
+
+        if comment is not None:
+            if line and not line.strip():
+                # indented comment line
+                # append to previous field / constant if available or ignore
+                if last_element is not None:
+                    comment_lines = last_element.annotations.setdefault(
+                        'comment', [])
+                    comment_lines.append(comment)
+                continue
+            # collect "unused" comments
+            current_comments.append(comment)
+
+            line = line.rstrip()
+            if not line:
+                continue
+
+        type_string, _, rest = line.partition(' ')
+        rest = rest.lstrip()
+        if not rest:
+            print('Error with:', pkg_name, msg_name, line, file=sys.stderr)
+            raise InvalidFieldDefinition(line)
+        index = rest.find(CONSTANT_SEPARATOR)
+        if index == -1:
+            # line contains a field
+            field_name, _, default_value_string = rest.partition(' ')
+            default_value_string = default_value_string.lstrip()
+            if not default_value_string:
+                default_value_string = None
+            try:
+                fields.append(Field(
+                    Type(type_string, context_package_name=pkg_name),
+                    field_name, default_value_string))
+            except Exception as err:
+                print(
+                    "Error processing '{line}' of '{pkg}/{msg}': '{err}'".format(
+                        line=line, pkg=pkg_name, msg=msg_name, err=err),
+                    file=sys.stderr)
+                raise
+            last_element = fields[-1]
+
+        else:
+            # line contains a constant
+            name, _, value = rest.partition(CONSTANT_SEPARATOR)
+            name = name.rstrip()
+            value = value.lstrip()
+            constants.append(Constant(type_string, name, value))
+            last_element = constants[-1]
+
+        # add "unused" comments to the field / constant
+        comment_lines = last_element.annotations.setdefault(
+            'comment', [])
+        comment_lines += current_comments
+        current_comments = []
+
+    msg = MessageSpecification(pkg_name, msg_name, fields, constants)
+    msg.annotations['comment'] = message_comments
+
+    # condense comment lines, extract special annotations
+    process_comments(msg)
+    for field in fields:
+        process_comments(field)
+    for constant in constants:
+        process_comments(constant)
+
+    return msg
