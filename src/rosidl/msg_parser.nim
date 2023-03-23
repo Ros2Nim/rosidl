@@ -120,13 +120,15 @@ type
         array_size*: int
         base*: BaseType
 
-    Constant* = ref object
+    BaseField* = ref object of RootObj
+        annotations*: Table[string, seq[string]]
+    
+    Constant* = ref object of BaseField
         typ*: string
         name*: string
         value*: MsgVal
-        annotations*: Table[string, seq[string]]
 
-    Field* = ref object
+    Field* = ref object of BaseField
         name*: string
         typ*: Type
 
@@ -251,18 +253,18 @@ proc newConstant*(primitive_type, name, value_string: string): Constant =
     result.value = parse_primitive_value_string(
         newType(primitive_type), value_string)
 
-proc newField*(typ: Type, name: string, default_value_string=""): Field =
-    result.typ = typ
-    if not is_valid_field_name(name):
-        raise newException(ValueError, "`$1` is an invalid field name. " % [name])
-    result.name = name
-    if default_value_string == "":
-        result.default_value = None
-    else:
-        self.default_value = parse_value_string(
-            type_, default_value_string)
+# proc newField*(typ: Type, name: string, default_value_string=""): Field =
+#     result.typ = typ
+#     if not is_valid_field_name(name):
+#         raise newException(ValueError, "`$1` is an invalid field name. " % [name])
+#     result.name = name
+#     if default_value_string == "":
+#         result.default_value = None
+#     else:
+#         self.default_value = parse_value_string(
+#             type_, default_value_string)
 
-    self.annotations = {}
+#     self.annotations = {}
 
 
 
@@ -317,105 +319,6 @@ proc rstrip(line: string, sep = Whitespace): string = line.strip(leading=false, 
 proc partition(line, sep: string): (string, string) =
     let ln = line.split(sep)
     (ln[0], ln[1])
-
-proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageSpecification =
-    var
-        fields: seq[Field]
-        constants: seq[Constant]
-        message_string = message_string.replace("\t", " ")
-    
-    let
-        (message_comments, lines) = extract_file_level_comments(message_string)
-    
-    var
-        current_comments: seq[string]
-        comment_lines: seq[Items]
-        last_element: Items
-
-    for line in lines:
-        var line = line.strip(leading=true, trailing=false, Whitespace)
-
-        # ignore empty lines
-        if line == "":
-            # file-level comments stop at the first empty line
-            continue
-
-        var index = line.find(COMMENT_DELIMITER)
-
-        # comment
-        var comment = ""
-        if index >= 0:
-            comment = line[index..^1].lstrip({COMMENT_DELIMITER})
-            line = line[0..<index]
-
-        if comment != "":
-            if line.strip() != "":
-                # indented comment line
-                # append to previous field / constant if available or ignore
-                match last_element:
-                    INone:
-                        discard
-                    IConstant(c):
-                        c.annotations.mgetOrPut("comment", @[]).add(comment)
-                    IField(f):
-                        discard
-                        # f.annotations.mgetOrPut("comment", @[]).add(comment)
-                continue
-            # collect "unused" comments
-            current_comments.add(comment)
-
-            line = line.strip(leading=false, trailing=true)
-            if line != "":
-                continue
-
-        let (type_string, mrest) = line.partition(" ")
-        var rest = mrest.lstrip()
-
-        if rest == "":
-            raise newException(InvalidFieldDefinition,line)
-
-        index = rest.find(CONSTANT_SEPARATOR)
-        if index == -1:
-            # line contains a field
-            let (field_name, mdefault_value_string) = rest.partition(" ")
-            let default_value_string = mdefault_value_string.lstrip()
-            try:
-                fields.add(newField(
-                    newType(type_string, context_package_name=pkg_name),
-                    field_name, default_value_string))
-            except Exception as err:
-                print(
-                    "Error processing '{line}' of '{pkg}/{msg}': '{err}'".format(
-                        line=line, pkg=pkg_name, msg=msg_name, err=err),
-                    file=sys.stderr)
-                raise
-            last_element = fields[-1]
-
-        else:
-            # line contains a constant
-            name, _, value = rest.partition(CONSTANT_SEPARATOR)
-            name = name.rstrip()
-            value = value.lstrip()
-            constants.append(Constant(type_string, name, value))
-            last_element = constants[-1]
-
-        # add "unused" comments to the field / constant
-        comment_lines = last_element.annotations.setdefault(
-            'comment', [])
-        comment_lines += current_comments
-        current_comments = []
-
-    msg = MessageSpecification(pkg_name, msg_name, fields, constants)
-    msg.annotations['comment'] = message_comments
-
-    # condense comment lines, extract special annotations
-    process_comments(msg)
-    for field in fields:
-        process_comments(field)
-    for constant in constants:
-        process_comments(constant)
-
-    return msg
 
 proc parse_primitive_value_string(typ: Type, value_string: string): MsgVal =
     if not typ.is_primitive_type() or typ.is_array:
@@ -504,3 +407,242 @@ proc parse_primitive_value_string(typ: Type, value_string: string): MsgVal =
     raise newException(InvalidValue,
                 "unknown primitive type `$1`" % [primitive_type])
 
+
+proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageSpecification =
+    var
+        fields: seq[Field]
+        constants: seq[Constant]
+        message_string = message_string.replace("\t", " ")
+    
+    let
+        (message_comments, lines) = extract_file_level_comments(message_string)
+    
+    var
+        current_comments: seq[string]
+        comment_lines: seq[Items]
+        last_element: Items
+
+    for line in lines:
+        var line = line.strip(leading=true, trailing=false, Whitespace)
+
+        # ignore empty lines
+        if line == "":
+            # file-level comments stop at the first empty line
+            continue
+
+        var index = line.find(COMMENT_DELIMITER)
+
+        # comment
+        var comment = ""
+        if index >= 0:
+            comment = line[index..^1].lstrip({COMMENT_DELIMITER})
+            line = line[0..<index]
+
+        if comment != "":
+            if line.strip() != "":
+                # indented comment line
+                # append to previous field / constant if available or ignore
+                match last_element:
+                    INone:
+                        discard
+                    IConstant(c):
+                        c.annotations.mgetOrPut("comment", @[]).add(comment)
+                    IField(f):
+                        discard
+                        # f.annotations.mgetOrPut("comment", @[]).add(comment)
+                continue
+            # collect "unused" comments
+            current_comments.add(comment)
+
+            line = line.strip(leading=false, trailing=true)
+            if line != "":
+                continue
+
+        let (type_string, mrest) = line.partition(" ")
+        var rest = mrest.lstrip()
+
+        if rest == "":
+            raise newException(InvalidFieldDefinition,line)
+
+        index = rest.find(CONSTANT_SEPARATOR)
+        if index == -1:
+            # line contains a field
+            let (field_name, mdefault_value_string) = rest.partition(" ")
+            let default_value_string = mdefault_value_string.lstrip()
+            try:
+                fields.add(newField(
+                    newType(type_string, context_package_name=pkg_name),
+                    field_name, default_value_string))
+            except Exception as err:
+                print(
+                    "Error processing '{line}' of '{pkg}/{msg}': '{err}'".format(
+                        line=line, pkg=pkg_name, msg=msg_name, err=err),
+                    file=sys.stderr)
+                raise
+            last_element = fields[-1]
+
+        else:
+            # line contains a constant
+            let (name, value) = rest.partition(CONSTANT_SEPARATOR)
+            name = name.rstrip()
+            value = value.lstrip()
+            constants.append(Constant(type_string, name, value))
+            last_element = constants[-1]
+
+        # add "unused" comments to the field / constant
+        comment_lines = last_element.annotations.setdefault(
+            'comment', [])
+        comment_lines += current_comments
+        current_comments = []
+
+    msg = MessageSpecification(pkg_name, msg_name, fields, constants)
+    msg.annotations['comment'] = message_comments
+
+    # condense comment lines, extract special annotations
+    process_comments(msg)
+    for field in fields:
+        process_comments(field)
+    for constant in constants:
+        process_comments(constant)
+
+    return msg
+
+
+proc process_comments(instance: MsgVal): bool =
+    if "comment" in instance.annotations:
+        lines = instance.annotations["comment"]
+
+        # look for a unit in brackets
+        # the unit should not contains a comma since it might be a range
+        comment = '\n'.join(lines)
+        pattern = r'(\s*\[([^,\]]+)\])'
+        matches = re.findall(pattern, comment)
+        if len(matches) == 1:
+            instance.annotations['unit'] = matches[0][1]
+            # remove the unit from the comment
+            for i, line in enumerate(lines):
+                lines[i] = line.replace(matches[0][0], '')
+
+        # remove empty leading lines
+        while lines and lines[0] == '':
+            del lines[0]
+        # remove empty trailing lines
+        while lines and lines[-1] == '':
+            del lines[-1]
+        # remove consecutive empty lines
+        length = len(lines)
+        i = 1
+        while i < length:
+            if lines[i] == '' and lines[i - 1] == '':
+                lines[i - 1:i + 1] = ['']
+                length -= 1
+                continue
+            i += 1
+        if lines:
+            text = '\n'.join(lines)
+            instance.annotations['comment'] = textwrap.dedent(text).split('\n')
+
+
+proc parse_value_string(type_, value_string): bool =
+    if type_.is_primitive_type() and not type_.is_array:
+        return parse_primitive_value_string(type_, value_string)
+
+    if type_.is_primitive_type() and type_.is_array:
+        # check for array brackets
+        if not value_string.startswith('[') or not value_string.endswith(']'):
+            raise InvalidValue(
+                type_, value_string,
+                "array value must start with '[' and end with ']'")
+        elements_string = value_string[1:-1]
+
+        if type_.type in ('string', 'wstring'):
+            # String arrays need special processing as the comma can be part of a quoted string
+            # and not a separator of array elements
+            value_strings = parse_string_array_value_string(elements_string, type_.array_size)
+        else:
+            value_strings = elements_string.split(',') if elements_string else []
+        if type_.array_size:
+            # check for exact size
+            if not type_.is_upper_bound and \
+                    len(value_strings) != type_.array_size:
+                raise InvalidValue(
+                    type_, value_string,
+                    'array must have exactly %u elements, not %u' %
+                    (type_.array_size, len(value_strings)))
+            # check for upper bound
+            if type_.is_upper_bound and len(value_strings) > type_.array_size:
+                raise InvalidValue(
+                    type_, value_string,
+                    'array must have not more than %u elements, not %u' %
+                    (type_.array_size, len(value_strings)))
+
+        # parse all primitive values one by one
+        values = []
+        for index, element_string in enumerate(value_strings):
+            element_string = element_string.strip()
+            try:
+                base_type = Type(BaseType.__str__(type_))
+                value = parse_primitive_value_string(base_type, element_string)
+            except InvalidValue as e:
+                raise InvalidValue(
+                    type_, value_string, 'element %u with %s' % (index, e))
+            values.append(value)
+        return values
+
+    raise NotImplementedError(
+        "parsing string values into type '%s' is not supported" % type_)
+
+
+def parse_string_array_value_string(element_string, expected_size):
+    # Walks the string, if start with quote (' or ") find next unescapted quote,
+    # returns a list of string elements
+    value_strings = []
+    while len(element_string) > 0:
+        element_string = element_string.lstrip(' ')
+        if element_string[0] == ',':
+            raise ValueError("unxepected ',' at beginning of [%s]" % element_string)
+        if len(element_string) == 0:
+            return value_strings
+        quoted_value = False
+        for quote in ['"', "'"]:
+            if element_string.startswith(quote):
+                quoted_value = True
+                end_quote_idx = find_matching_end_quote(element_string, quote)
+                if end_quote_idx == -1:
+                    raise ValueError('string [%s] incorrectly quoted\n%s' % (
+                        element_string, value_strings))
+                else:
+                    value_string = element_string[1:end_quote_idx + 1]
+                    value_string = value_string.replace('\\' + quote, quote)
+                    value_strings.append(value_string)
+                    element_string = element_string[end_quote_idx + 2:]
+        if not quoted_value:
+            next_comma_idx = element_string.find(',')
+            if next_comma_idx == -1:
+                value_strings.append(element_string)
+                element_string = ''
+            else:
+                value_strings.append(element_string[:next_comma_idx])
+                element_string = element_string[next_comma_idx:]
+        element_string = element_string.lstrip(' ')
+        if len(element_string) > 0 and element_string[0] == ',':
+            element_string = element_string[1:]
+    return value_strings
+
+
+def find_matching_end_quote(string, quote):
+    # Given a string, walk it and find the next unescapted quote
+    # returns the index of the ending quote if successful, -1 otherwise
+    ending_quote_idx = -1
+    final_quote_idx = 0
+    while len(string) > 0:
+        ending_quote_idx = string[1:].find(quote)
+        if ending_quote_idx == -1:
+            return -1
+        if string[ending_quote_idx:ending_quote_idx + 2] != '\\%s' % quote:
+            # found a matching end quote that is not escaped
+            return final_quote_idx + ending_quote_idx
+        else:
+            string = string[ending_quote_idx + 2:]
+            final_quote_idx = ending_quote_idx + 2
+    return -1
