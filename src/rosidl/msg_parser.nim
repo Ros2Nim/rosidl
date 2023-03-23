@@ -108,6 +108,7 @@ variantp MsgVal:
   MUInt(uval: uint64)
   MFloat(fval: float)
   MString(sval: string)
+  MArray(aval: seq[MsgVal])
 
 type
     BaseType* = ref object of RootObj
@@ -589,18 +590,17 @@ proc parse_value_string(typ: Type, value_string: string): MsgVal =
                     [$typ.array_size, $len(value_strings)])
 
         # parse all primitive values one by one
-        var values: seq[string]
+        var values: seq[MsgVal]
         for index, element_string in value_strings:
             var element_string = element_string.strip()
             try:
                 var base_type = newType($BaseType(typ))
-                var value = parse_primitive_value_string(base_type, element_string)
+                values.add parse_primitive_value_string(base_type, element_string)
             except InvalidValue:
                 raise newException(InvalidValue,
                     $typ & " / " & value_string &
                     "element $1 with $2" % [$index, getCurrentExceptionMsg()])
-            values.add(value)
-        return values
+        return MArray(values)
 
     raise newException(ValueError,
         "parsing string values into type `$1` is not supported" % [$typ])
