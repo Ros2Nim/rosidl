@@ -60,6 +60,32 @@ let
     # VALID_MESSAGE_NAME_PATTERN = re.compile("^[A-Za-z][A-Za-z0-9]*$")
     VALID_CONSTANT_NAME_PATTERN = re"^[A-Z]([A-Z0-9_]?[A-Z0-9]+)*$"
 
+proc is_valid_field_name(name: string): bool =
+    if name =~ VALID_FIELD_NAME_PATTERN:
+        return matches[0] == name
+
+proc is_valid_message_name(name: string): bool =
+    var name = name
+    let prefix = "Sample_"
+    if name.startswith(prefix):
+        name = name[len(prefix)..^1]
+    let suffixes = [
+        SERVICE_REQUEST_MESSAGE_SUFFIX,
+        SERVICE_RESPONSE_MESSAGE_SUFFIX,
+        ACTION_GOAL_SERVICE_SUFFIX,
+        ACTION_RESULT_SERVICE_SUFFIX,
+        ACTION_FEEDBACK_MESSAGE_SUFFIX,
+    ]
+    for suffix in suffixes:
+        if name.endswith(suffix):
+            name = name[0..^len(suffix)]
+    if name =~ VALID_MESSAGE_NAME_PATTERN:
+        return matches[0] == name
+
+proc is_valid_constant_name(name: string): bool =
+    if name =~ VALID_CONSTANT_NAME_PATTERN:
+        return matches[0] == name
+
 type
     InvalidSpecification* = object of Exception
     InvalidActionSpecification* = object of InvalidSpecification
@@ -89,34 +115,6 @@ proc is_valid_package_name(name: string): bool =
     if name =~ VALID_PACKAGE_NAME_PATTERN:
         return matches[0] == name
 
-
-proc is_valid_field_name(name: string): bool =
-    if name =~ VALID_FIELD_NAME_PATTERN:
-        return matches[0] == name
-
-
-proc is_valid_message_name(name: string): bool =
-    var name = name
-    let prefix = "Sample_"
-    if name.startswith(prefix):
-        name = name[len(prefix)..^1]
-    let suffixes = [
-        SERVICE_REQUEST_MESSAGE_SUFFIX,
-        SERVICE_RESPONSE_MESSAGE_SUFFIX,
-        ACTION_GOAL_SERVICE_SUFFIX,
-        ACTION_RESULT_SERVICE_SUFFIX,
-        ACTION_FEEDBACK_MESSAGE_SUFFIX,
-    ]
-    for suffix in suffixes:
-        if name.endswith(suffix):
-            name = name[0..^len(suffix)]
-    if name =~ VALID_MESSAGE_NAME_PATTERN:
-        return matches[0] == name
-
-
-proc is_valid_constant_name(name: string): bool =
-    if name =~ VALID_CONSTANT_NAME_PATTERN:
-        return matches[0] == name
 
 proc new*(typ: typedesc[BaseType], type_string: string, context_package_name=""): BaseType =
     new result
@@ -158,11 +156,11 @@ proc new*(typ: typedesc[BaseType], type_string: string, context_package_name="")
             result.pkg_name = context_package_name
             result.typ = type_string
         if not is_valid_package_name(result.pkg_name):
-            raise InvalidResourceName(
+            raise newException(InvalidResourceName,
                 "'$1' is an invalid package name. It should have the pattern '$2'" % [
                     result.pkg_name, VALID_PACKAGE_NAME_PATTERN.pattern])
         if not is_valid_message_name(result.type):
-            raise InvalidResourceName(
+            raise newException(InvalidResourceName,
                 "'$1' is an invalid message name. It should have the pattern '$2'" % [
                     result.type, VALID_MESSAGE_NAME_PATTERN.pattern])
 

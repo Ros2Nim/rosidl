@@ -1,2 +1,4 @@
 /rosidl
 src/rosidl_runtime_c/service_type_support_struct
+/src/rosidl/msg_parser
+/src/rosidl/rosidl_ctypes
