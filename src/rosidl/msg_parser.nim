@@ -593,16 +593,17 @@ proc parse_value_string(typ: Type, value_string: string): MsgVal =
         for index, element_string in value_strings:
             var element_string = element_string.strip()
             try:
-                base_type = Type(BaseType.__str__(typ))
-                value = parse_primitive_value_string(base_type, element_string)
-            except InvalidValue as e:
-                raise InvalidValue(
-                    typ, value_string, "element %u with %s" % (index, e))
-            values.append(value)
+                var base_type = newType($BaseType(typ))
+                var value = parse_primitive_value_string(base_type, element_string)
+            except InvalidValue:
+                raise newException(InvalidValue,
+                    $typ & " / " & value_string &
+                    "element $1 with $2" % [$index, getCurrentExceptionMsg()])
+            values.add(value)
         return values
 
-    raise NotImplementedError(
-        "parsing string values into type "%s" is not supported" % typ)
+    raise newException(ValueError,
+        "parsing string values into type `$1` is not supported" % [$typ])
 
 
 proc parse_string_array_value_string(element_string: string, expected_size: int): seq[string] =
