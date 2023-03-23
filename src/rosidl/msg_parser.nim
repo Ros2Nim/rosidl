@@ -119,6 +119,12 @@ type
 proc is_primitive_type*(self: BaseType): bool =
     return self.pkg_name == ""
 
+proc is_dynamic_array*(self: Type): bool =
+    return self.is_array and (self.array_size > -1 or self.is_upper_bound)
+
+proc is_fixed_size_array*(self: Type): bool =
+    return self.is_array and self.array_size > -1 and not self.is_upper_bound
+
 proc newBaseType*(type_string: string, context_package_name=""): BaseType =
     new result
     # check for primitive types
