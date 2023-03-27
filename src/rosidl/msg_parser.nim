@@ -349,7 +349,7 @@ proc lstrip(line: string, sep = Whitespace): string = line.strip(leading=true, t
 proc rstrip(line: string, sep = Whitespace): string = line.strip(leading=false, trailing=true, sep)
 
 proc partition(line, sep: string): (string, string) =
-    let ln = line.split(sep)
+    let ln = line.split(sep, maxsplit=1)
     echo "partition: ", repr ln
     if ln.len() == 0:
         ("", "")
@@ -701,6 +701,7 @@ proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageS
 
         let (typstring, mrest) = line.partition(" ")
         var rest = mrest.lstrip()
+        echo "typstring: ", typstring, " rest: ", mrest
 
         echo "REST: ", rest
         if rest == "":
@@ -709,8 +710,10 @@ proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageS
         index = rest.find(CONSTANT_SEPARATOR)
         if index == -1:
             # line contains a field
+            echo "field rest: ", rest
             let (field_name, mdefault_value_string) = rest.partition(" ")
             let default_value_string = mdefault_value_string.lstrip()
+            echo "field name: ", field_name, " ", repr default_value_string
             try:
                 fields.add(newField(
                     newType(typstring, context_package_name=pkg_name),
