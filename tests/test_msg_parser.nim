@@ -131,7 +131,7 @@ suite "fields":
     check typ.is_array == true
     var field = newField(typ, "foo", "[false, true]")
     echo "field:defval: ", field.default_value.get
-    # check field.default_value.get == [false, true]
+    check field.default_value.get.aval == [MBool false, MBool true]
 
     # typ = Type("bool[]")
     # field = Field(typ, "foo", "[false, true, false]")
