@@ -269,7 +269,8 @@ proc newType*(typstring: string, context_package_name=""): Type =
 
     result.BaseType.setupBaseType(typstring, context_package_name)
 
-proc newConstant*(primitive_type, name, value_string: string): Constant =
+proc newConstant*(primitive_type, name: string, value_string = ""): Constant =
+    new result
     if primitive_type notin PRIMITIVE_TYPES:
         raise newException(ValueError,
                         "the constant type `$1` must be a primitive type" %

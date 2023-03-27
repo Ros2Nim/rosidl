@@ -71,7 +71,7 @@ suite "base type constructor":
       discard newBaseType("pkg/Foo Bar")
 
 
-test "base type methods":
+  test "base type methods":
     check newBaseType("bool").is_primitive_type()
     check not newBaseType("pkg/Foo").is_primitive_type()
     # check newBaseType("bool") != 23
@@ -82,3 +82,16 @@ test "base type methods":
     check $(newBaseType("string<=5")) == "string<=5"
     check $(newBaseType("wstring<=5")) == "wstring<=5"
 
+suite "constants":
+  setup:
+    var value = newConstant("bool", "FOO", "1")
+
+  test "bad values":
+    expect ValueError:
+        discard newConstant("pkg/Foo", "FOO", "")
+
+    expect ValueError:
+        discard newConstant("bool", "FOO BAR", "")
+
+    expect InvalidValue:
+        discard newConstant("bool", "FOO")
