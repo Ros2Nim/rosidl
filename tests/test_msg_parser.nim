@@ -122,15 +122,15 @@ suite "fields":
     field = newField(typ, "foo", "1")
     check field.default_value.isSome
 
-    # with pytest.raises(TypeError):
-    #     Field("type", "foo")
-
     # with pytest.raises(NameError):
-    #     Field(typ, "foo bar")
+    expect ValueError:
+        discard newField(typ, "foo bar")
 
-    # typ = Type("bool[2]")
-    # field = Field(typ, "foo", "[false, true]")
-    # check field.default_value == [False, True]
+  test "field array constructor":
+    var typ = newType("bool[2]")
+    var field = newField(typ, "foo", "[false, true]")
+    echo "field:defval: ", field.default_value.get
+    # check field.default_value.get == [false, true]
 
     # typ = Type("bool[]")
     # field = Field(typ, "foo", "[false, true, false]")

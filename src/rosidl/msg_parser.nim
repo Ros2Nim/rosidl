@@ -288,7 +288,7 @@ proc newType*(typstring: string, context_package_name=""): Type =
         if index == -1:
             raise newException(ValueError, ("the type ends with `]` but does not " &
                             "contain a `[`") % [typstring])
-        var array_size_string = typstring[index + 1..^1]
+        var array_size_string = typstring[index + 1 ..< ^1]
         # get array limit
         if array_size_string != "":
 
@@ -305,6 +305,7 @@ proc newType*(typstring: string, context_package_name=""): Type =
                 "an upper bound") %
                 [ARRAY_UPPER_BOUND_TOKEN, typstring])
             try:
+                echo "array_size_string: ", array_size_string
                 result.array_size = parseInt(array_size_string)
             except ValueError:
                 raise ex
@@ -466,7 +467,7 @@ proc parse_primitive_value_string(typ: Type, value_string: string): MsgVal =
         var value_string = value_string
         for quote in ["'", "\""]:
             if value_string.startswith(quote) and value_string.endswith(quote):
-                value_string = value_string[1..^1]
+                value_string = value_string[1 ..< ^1]
                 var m: RegexMatch
                 if value_string .match(re("(?<!\\)" & quote), m):
                     raise newException(InvalidValue,
@@ -622,7 +623,7 @@ proc parse_value_string(typ: Type, value_string: string): MsgVal =
         if not value_string.startswith("[") or not value_string.endswith("]"):
             raise newException(InvalidValue,
                 "array value must start with `[` and end with `]`")
-        var elements_string = value_string[1..^1]
+        var elements_string = value_string[1 ..< ^1]
 
         var value_strings: seq[string]
         if typ.typ in ["string", "wstring"]:
