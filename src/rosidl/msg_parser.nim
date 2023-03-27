@@ -140,6 +140,15 @@ type
         typ*: Type
         default_value*: MsgVal
 
+proc is_primitive_type*(self: BaseType): bool =
+    return self.pkg_name == ""
+
+proc is_dynamic_array*(self: Type): bool =
+    return self.is_array and (self.array_size > -1 or self.is_upper_bound)
+
+proc is_fixed_size_array*(self: Type): bool =
+    return self.is_array and self.array_size > -1 and not self.is_upper_bound
+
 proc `==`*(x, y: BaseType): bool =
     result = x.pkg_name == y.pkg_name and 
         x.typ == y.typ and
@@ -162,18 +171,35 @@ proc `$`*(self: Type): string =
             result.add $self.array_size
         result.add ']'
 
+proc `$`*(self: MsgVal): string =
+    match self:
+        MNone: ""
+        MBool(bval): $bval
+        MByte(cval): $cval
+        MInt(ival): $ival
+        MUInt(uval): $uval
+        MFloat(fval): $fval
+        MString(sval): $sval
+        MArray(aval): aval.mapIt($it).join(", ")
+
+proc `$`*(self: Constant): string =
+    var value = $self.value
+    if self.typ in ["string", "wstring"]:
+        value = "'$1'" % [$value]
+    return "$1 $2=$3" % [$self.typ, self.name, value]
+
+proc `$`*(self: Field): string =
+    result = "$1 $2" % [$(self.typ), self.name]
+    if self.default_value.kind != MsgValKind.MNone:
+        if self.typ.is_primitive_type() and not self.typ.is_array and
+                self.typ.typ in ["string", "wstring"]:
+            result.add " '%s'" % [$self.default_value]
+        else:
+            result.add " %s" % [$self.default_value]
+
 proc parse_primitive_value_string(typ: Type, value_string: string): MsgVal
 proc parse_value_string(typ: Type, value_string: string): MsgVal
 proc parse_string_array_value_string(element_string: string, expected_size: int): seq[string]
-
-proc is_primitive_type*(self: BaseType): bool =
-    return self.pkg_name == ""
-
-proc is_dynamic_array*(self: Type): bool =
-    return self.is_array and (self.array_size > -1 or self.is_upper_bound)
-
-proc is_fixed_size_array*(self: Type): bool =
-    return self.is_array and self.array_size > -1 and not self.is_upper_bound
 
 proc setupBaseType*(result: var BaseType, typstring: string, context_package_name="") =
     new result

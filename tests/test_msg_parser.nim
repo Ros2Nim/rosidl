@@ -95,3 +95,17 @@ suite "constants":
 
     expect InvalidValue:
         discard newConstant("bool", "FOO")
+
+  test "constant methods":
+    # assert Constant("bool", "FOO", "1") != 23
+
+    check newConstant("bool", "FOO", "1") == newConstant("bool", "FOO", "1")
+    check newConstant("bool", "FOO", "1") != newConstant("bool", "FOO", "0")
+    check newConstant("bool", "FOO", "1") != newConstant("bool", "BAR", "1")
+    check newConstant("bool", "FOO", "1") != newConstant("byte", "FOO", "1")
+
+    check $(newConstant("bool", "FOO", "1")) == "bool FOO=True"
+
+    check $(newConstant("string", "FOO", "foo")) == "string FOO=\"foo\""
+    check $(newConstant("wstring", "FOO", "foo")) == "wstring FOO=\"foo\""
+
