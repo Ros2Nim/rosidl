@@ -49,6 +49,14 @@ suite "primitives":
         newType("string"), "'\"fo\"o'")
     check $value == "\"fo\"o"
 
+    value = parse_primitive_value_string(
+        newType("string<=3"), "foo")
+    check $value == "foo"
+
+    expect(InvalidValue):
+        discard parse_primitive_value_string(
+            newType("string<=3"), "foobar")
+    
   #   value = parse_primitive_value_string(
   #       newType("string"), "\"fo\"o")
   #   check value == "\"fo"o"
