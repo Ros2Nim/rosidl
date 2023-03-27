@@ -45,25 +45,23 @@ const PRIMITIVE_TYPES* = [
 
 let VALID_PACKAGE_NAME_PATTERN*: Regex = re"""(?x)
     ^
-    (?:
+    ((?:
         .*__    # no consecutive underscores
       | .*_     # no underscore at the end
       | [a-z]       # first character must be alpha
-        [a-z0-9_]*  # followed by alpha, numeric, and underscore
-    )
+         [a-z0-9_]* # followed by alpha, numeric, and underscore
+    ))
     $
     """
-
-var r = re"""(?x) ^ (?!.*__) (?!.*_$) [a-z] [a-z0-9_]* $ """
 
 let 
     VALID_FIELD_NAME_PATTERN = VALID_PACKAGE_NAME_PATTERN
     # relaxed patterns used for compatibility with ROS 1 messages
     # VALID_FIELD_NAME_PATTERN = re.compile("^[A-Za-z][A-Za-z0-9_]*$")
-    VALID_MESSAGE_NAME_PATTERN = re"^[A-Z][A-Za-z0-9]*$"
+    VALID_MESSAGE_NAME_PATTERN = re"^([A-Z][A-Za-z0-9]*)$"
     # relaxed patterns used for compatibility with ROS 1 messages
     # VALID_MESSAGE_NAME_PATTERN = re.compile("^[A-Za-z][A-Za-z0-9]*$")
-    VALID_CONSTANT_NAME_PATTERN = re"^[A-Z]([A-Z0-9_]?[A-Z0-9]+)*$"
+    VALID_CONSTANT_NAME_PATTERN = re"^([A-Z]([A-Z0-9_]?[A-Z0-9]+)*)$"
 
 proc is_valid_field_name*(name: string): bool =
     var m: RegexMatch
@@ -87,6 +85,8 @@ proc is_valid_message_name*(name: string): bool =
             name = name[0..^len(suffix)]
     var m: RegexMatch
     if name.match(VALID_MESSAGE_NAME_PATTERN, m):
+        echo "VALID_MESSAGE_NAME_PATTERN:MATCH: ", m
+        echo "name: ", m.groupFirstCapture(0, name)
         return m.groupFirstCapture(0, name) == name
 
 proc is_valid_constant_name*(name: string): bool =
@@ -97,6 +97,8 @@ proc is_valid_constant_name*(name: string): bool =
 proc is_valid_package_name*(name: string): bool =
     var m: RegexMatch
     if name.match(VALID_PACKAGE_NAME_PATTERN, m):
+        echo "VALID_PACKAGE_NAME_PATTERN:MATCH: ", m
+        echo "name: ", m.groupFirstCapture(0, name)
         return m.groupFirstCapture(0, name) == name
 
 type
