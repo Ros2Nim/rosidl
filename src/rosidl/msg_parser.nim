@@ -350,7 +350,7 @@ proc rstrip(line: string, sep = Whitespace): string = line.strip(leading=false, 
 
 proc partition(line, sep: string): (string, string) =
     let ln = line.split(sep, maxsplit=1)
-    echo "partition: ", repr ln
+    # echo "partition: ", repr ln
     if ln.len() == 0:
         ("", "")
     elif ln.len() == 1:
@@ -661,9 +661,6 @@ proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageS
         current_comments: seq[string]
         last_element: BaseField
 
-    echo "MESSAGE_COMMENTS: ", message_comments
-    echo "LINES: ", lines
-
     for line in lines:
         var line = line.strip(leading=true, trailing=false, Whitespace)
 
@@ -673,7 +670,6 @@ proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageS
             echo "ignore empty line"
             continue
 
-        echo "processing line: ", line
         var index = line.find(COMMENT_DELIMITER)
 
         # comment
@@ -697,23 +693,18 @@ proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageS
             if line == "":
                 echo "ignore empty line"
                 continue
-        echo "processing line comment: ", comment
 
         let (typstring, mrest) = line.partition(" ")
         var rest = mrest.lstrip()
-        echo "typstring: ", typstring, " rest: ", mrest
 
-        echo "REST: ", rest
         if rest == "":
             raise newException(InvalidFieldDefinition, line)
 
         index = rest.find(CONSTANT_SEPARATOR)
         if index == -1:
             # line contains a field
-            echo "field rest: ", rest
             let (field_name, mdefault_value_string) = rest.partition(" ")
             let default_value_string = mdefault_value_string.lstrip()
-            echo "field name: ", field_name, " ", repr default_value_string
             try:
                 fields.add(newField(
                     newType(typstring, context_package_name=pkg_name),

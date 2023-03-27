@@ -43,3 +43,14 @@ suite "msg parse":
     check msg_spec.fields[0].name == "foo"
     check msg_spec.fields[0].default_value.isSome == true
     check len(msg_spec.constants) == 0
+  
+  test "issues":
+    expect(InvalidResourceName):
+        discard parse_message_string("pkg", "Foo", "Ty_pe foo")
+    expect(ValueError):
+        discard parse_message_string("pkg", "Foo", "bool] foo")
+    expect(ValueError):
+        discard parse_message_string("pkg", "Foo", "bool[max]] foo")
+    expect(ValueError):
+        discard parse_message_string("pkg", "Foo", "bool foo\nbool foo")
+    # check "foo" in $(e.value)
