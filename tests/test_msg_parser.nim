@@ -138,6 +138,7 @@ suite "fields":
     let field = newField(typ, "foo", "[false, true, false]")
     check field.default_value.get.aval == [MBool false, MBool true, MBool false]
 
-    # typ = Type("bool[3]")
-    # with pytest.raises(InvalidValue):
-    #     Field(typ, "foo", "[false, true]")
+  test "field 3 array constructor":
+    let typ = newType("bool[3]")
+    expect InvalidValue:
+        discard newField(typ, "foo", "[false, true]")
