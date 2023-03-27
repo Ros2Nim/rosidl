@@ -85,8 +85,6 @@ proc is_valid_message_name*(name: string): bool =
             name = name[0..^len(suffix)]
     var m: RegexMatch
     if name.match(VALID_MESSAGE_NAME_PATTERN, m):
-        echo "VALID_MESSAGE_NAME_PATTERN:MATCH: ", m
-        echo "name: ", m.groupFirstCapture(0, name)
         return m.groupFirstCapture(0, name) == name
 
 proc is_valid_constant_name*(name: string): bool =
@@ -97,8 +95,6 @@ proc is_valid_constant_name*(name: string): bool =
 proc is_valid_package_name*(name: string): bool =
     var m: RegexMatch
     if name.match(VALID_PACKAGE_NAME_PATTERN, m):
-        echo "VALID_PACKAGE_NAME_PATTERN:MATCH: ", m
-        echo "name: ", m.groupFirstCapture(0, name)
         return m.groupFirstCapture(0, name) == name
 
 type

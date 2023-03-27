@@ -50,25 +50,25 @@ suite "base type constructor":
         expect ValueError:
           discard newBaseType("$1<=0" % string_type)
 
-  test "strings":
+  test "package name":
     var base_type = newBaseType("pkg/Msg")
     check base_type.pkg_name == "pkg"
     check base_type.typ == "Msg"
     check base_type.string_upper_bound == -1
 
-    # base_type = BaseType("Msg", "pkg")
-    # check base_type.pkg_name == "pkg"
-    # check base_type.type == "Msg"
-    # check base_type.string_upper_bound is None
+    base_type = newBaseType("Msg", "pkg")
+    check base_type.pkg_name == "pkg"
+    check base_type.typ == "Msg"
+    check base_type.string_upper_bound == -1
 
-    # with pytest.raises(InvalidResourceName):
-    #     BaseType("Foo")
+    expect InvalidResourceName:
+      discard newBaseType("Foo")
 
-    # with pytest.raises(InvalidResourceName):
-    #     BaseType("pkg name/Foo")
+    expect InvalidResourceName:
+      discard newBaseType("pkg name/Foo")
 
-    # with pytest.raises(InvalidResourceName):
-    #     BaseType("pkg/Foo Bar")
+    expect InvalidResourceName:
+      discard newBaseType("pkg/Foo Bar")
 
 
 # test "base type methods":
