@@ -27,3 +27,19 @@ suite "msg parse":
   test "invalid ":
     expect(InvalidFieldDefinition):
       discard parse_message_string("pkg", "Foo", "bool  # comment")
+
+  test "named field":
+    var msg_spec = parse_message_string("pkg", "Foo", "bool foo")
+    check len(msg_spec.fields) == 1
+    check msg_spec.fields[0].typ.typ == "bool"
+    check msg_spec.fields[0].name == "foo"
+    check msg_spec.fields[0].default_value.isNone
+    check len(msg_spec.constants) == 0
+
+  test "named default field":
+    var msg_spec = parse_message_string("pkg", "Foo", "bool foo 1")
+    check len(msg_spec.fields) == 1
+    check msg_spec.fields[0].typ.typ == "bool"
+    check msg_spec.fields[0].name == "foo"
+    check msg_spec.fields[0].default_value.isSome == true
+    check len(msg_spec.constants) == 0

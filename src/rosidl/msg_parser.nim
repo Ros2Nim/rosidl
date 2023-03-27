@@ -718,7 +718,7 @@ proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageS
             except Exception as err:
                 # echo( fmt"Error processing "{line}" of "{pkg}/{msg}": "{err}"",)
                 raise err
-            last_element = fields[-1]
+            last_element = fields[^1]
 
         else:
             # line contains a constant
@@ -726,7 +726,7 @@ proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageS
             name = name.rstrip()
             value = value.lstrip()
             constants.add(newConstant(typstring, name, value))
-            last_element = constants[-1]
+            last_element = constants[^1]
 
         # add "unused" comments to the field / constant
         last_element.annotations.mgetOrPut("comment", @[]).add current_comments
