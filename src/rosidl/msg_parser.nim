@@ -177,8 +177,8 @@ proc setupBaseType*(result: var BaseType, typstring: string, context_package_nam
         result.typ = typstring
         result.string_upper_bound = -1
 
-    elif typstring.startswith("string%s" % STRING_UPPER_BOUND_TOKEN) or
-            typstring.startswith("wstring%s" % STRING_UPPER_BOUND_TOKEN):
+    elif typstring.startswith("string$1" % STRING_UPPER_BOUND_TOKEN) or
+            typstring.startswith("wstring$1" % STRING_UPPER_BOUND_TOKEN):
         result.pkg_name = ""
         result.typ = typstring.split(STRING_UPPER_BOUND_TOKEN, 1)[0]
         let upper_bound_string = typstring[len(result.typ) +
@@ -480,7 +480,6 @@ proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageS
     
     var
         current_comments: seq[string]
-        comment_lines: seq[BaseField]
         last_element: BaseField
 
     for line in lines:
@@ -636,7 +635,7 @@ proc parse_string_array_value_string(element_string: string, expected_size: int)
     while len(element_string) > 0:
         element_string = element_string.lstrip({' '})
         if element_string[0] == ',':
-            raise newException(ValueError,"unxepected `,` at beginning of [%s]" % [element_string])
+            raise newException(ValueError,"unxepected `,` at beginning of [$1]" % [element_string])
         if len(element_string) == 0:
             return value_strings
         var quoted_value = false
