@@ -140,6 +140,10 @@ type
         typ*: Type
         default_value*: MsgVal
 
+proc `==`*(x, y: BaseType): bool =
+    result = x.pkg_name == y.pkg_name and 
+        x.typ == y.typ and
+        x.string_upper_bound == y.string_upper_bound
 
 proc `$`*(self: BaseType): string =
     if self.pkg_name != "":

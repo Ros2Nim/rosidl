@@ -71,14 +71,14 @@ suite "base type constructor":
       discard newBaseType("pkg/Foo Bar")
 
 
-# test "base type methods":
-#     check BaseType("bool").is_primitive_type()
-#     check not BaseType("pkg/Foo").is_primitive_type()
-#     check BaseType("bool") != 23
-#     check BaseType("pkg/Foo") == BaseType("pkg/Foo")
-#     check BaseType("bool") != BaseType("pkg/Foo")
-#     {BaseType("bool"): None}
-#     check str(BaseType("pkg/Foo")) == "pkg/Foo"
-#     check str(BaseType("bool")) == "bool"
-#     check str(BaseType("string<=5")) == "string<=5"
-#     check str(BaseType("wstring<=5")) == "wstring<=5"
+test "base type methods":
+    check newBaseType("bool").is_primitive_type()
+    check not newBaseType("pkg/Foo").is_primitive_type()
+    # check newBaseType("bool") != 23
+    # echo repr (newBaseType("pkg/Foo"), newBaseType("pkg/Foo"), )
+    check newBaseType("pkg/Foo") == newBaseType("pkg/Foo")
+    # check newBaseType("bool") != newBaseType("pkg/Foo")
+    # check $(newBaseType("pkg/Foo")) == "pkg/Foo"
+    # check $(newBaseType("bool")) == "bool"
+    # check $(newBaseType("string<=5")) == "string<=5"
+    # check $(newBaseType("wstring<=5")) == "wstring<=5"
