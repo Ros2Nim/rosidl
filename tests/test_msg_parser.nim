@@ -146,7 +146,7 @@ suite "fields":
     check (newField(newType("bool"), "foo", "1") ==
             newField(newType("bool"), "foo", "true"))
 
-suite "type xtors":
+suite "types":
   test "type basics":
     let typ = newType("bool")
     check typ.pkg_name == ""
@@ -181,3 +181,17 @@ suite "type xtors":
     check typ.array_size.get == 5
     check typ.is_upper_bound
   
+  test "type_methods":
+    check newType("pkg/Foo") == newType("pkg/Foo")
+    check newType("pkg/Foo[]") == newType("pkg/Foo[]")
+    check newType("pkg/Foo[5]") == newType("pkg/Foo[5]")
+    check newType("pkg/Foo[<=5]") == newType("pkg/Foo[<=5]")
+
+    check newType("bool") != newType("pkg/Foo")
+    check newType("pkg/Foo[]") != newType("pkg/Foo[5]")
+    check newType("pkg/Foo[5]") != newType("pkg/Foo[<=5]")
+    check newType("pkg/Foo[<=5]") != newType("pkg/Foo[<=23]")
+
+    check $(newType("pkg/Foo[]")) == "pkg/Foo[]"
+    check $(newType("pkg/Foo[5]")) == "pkg/Foo[5]"
+    check $(newType("pkg/Foo[<=5]")) == "pkg/Foo[<=5]"
