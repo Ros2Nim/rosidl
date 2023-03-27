@@ -133,9 +133,10 @@ suite "fields":
     echo "field:defval: ", field.default_value.get
     check field.default_value.get.aval == [MBool false, MBool true]
 
-    # typ = Type("bool[]")
-    # field = Field(typ, "foo", "[false, true, false]")
-    # check field.default_value == [False, True, False]
+  test "field empty array constructor":
+    let typ = newType("bool[]")
+    let field = newField(typ, "foo", "[false, true, false]")
+    check field.default_value.get.aval == [MBool false, MBool true, MBool false]
 
     # typ = Type("bool[3]")
     # with pytest.raises(InvalidValue):
