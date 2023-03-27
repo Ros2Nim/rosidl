@@ -1,5 +1,6 @@
-import std / [strutils, strformat, sequtils, tables]
+import std / [strutils, strformat, sequtils, tables, options]
 import patty, regex
+export options
 
 const PACKAGE_NAME_MESSAGE_typSEPARATOR* = "/"
 const COMMENT_DELIMITER* = '#'
@@ -120,7 +121,7 @@ type
     BaseType* = ref object of RootObj
         pkg_name*: string
         typ*: string
-        string_upper_bound*: int
+        string_upper_bound*: Option[int]
 
     Type* = ref object of BaseType
         is_array*: bool
@@ -138,7 +139,7 @@ type
     Field* = ref object of BaseField
         name*: string
         typ*: Type
-        default_value*: MsgVal
+        default_value*: Option[MsgVal]
 
 proc is_primitive_type*(self: BaseType): bool =
     return self.pkg_name == ""
@@ -178,8 +179,8 @@ proc `$`*(self: BaseType): string =
     if self.pkg_name != "":
         return self.pkg_name & "/" & self.typ
     result = self.typ
-    if self.string_upper_bound > -1:
-        result.add STRING_UPPER_BOUND_TOKEN & $self.string_upper_bound
+    if self.string_upper_bound.isSome:
+        result.add STRING_UPPER_BOUND_TOKEN & $self.string_upper_bound.get()
 
 proc `$`*(self: Type): string =
     result = $(self.BaseType)
@@ -210,12 +211,12 @@ proc `$`*(self: Constant): string =
 
 proc `$`*(self: Field): string =
     result = "$1 $2" % [$(self.typ), self.name]
-    if self.default_value.kind != MsgValKind.MNone:
+    if self.default_value.isSome:
         if self.typ.is_primitive_type() and not self.typ.is_array and
                 self.typ.typ in ["string", "wstring"]:
-            result.add " '%s'" % [$self.default_value]
+            result.add " '%s'" % [$self.default_value.get]
         else:
-            result.add " %s" % [$self.default_value]
+            result.add " %s" % [$self.default_value.get]
 
 proc parse_primitive_value_string(typ: Type, value_string: string): MsgVal
 proc parse_value_string(typ: Type, value_string: string): MsgVal
@@ -227,7 +228,7 @@ proc setupBaseType*(result: var BaseType, typstring: string, context_package_nam
     if typstring in PRIMITIVE_TYPES:
         result.pkg_name = ""
         result.typ = typstring
-        result.string_upper_bound = -1
+        result.string_upper_bound = int.none
 
     elif typstring.startswith("string$1" % STRING_UPPER_BOUND_TOKEN) or
             typstring.startswith("wstring$1" % STRING_UPPER_BOUND_TOKEN):
@@ -239,10 +240,10 @@ proc setupBaseType*(result: var BaseType, typstring: string, context_package_nam
         var ex = newException(ValueError, ("the upper bound of the string type `$1` must " &
                         "be a valid integer value > 0") % [typstring])
         try:
-            result.string_upper_bound = parseInt(upper_bound_string)
+            result.string_upper_bound = some(parseInt(upper_bound_string))
         except ValueError:
             raise ex
-        if result.string_upper_bound <= 0:
+        if result.string_upper_bound.get() <= 0:
             raise ex
 
     else:
@@ -267,7 +268,7 @@ proc setupBaseType*(result: var BaseType, typstring: string, context_package_nam
             raise newException(InvalidResourceName,
                 "`$1` is an invalid message name." % [result.typ])
 
-        result.string_upper_bound = -1
+        result.string_upper_bound = int.none
 
 proc newBaseType*(typstring: string, context_package_name=""): BaseType =
     new result
@@ -338,10 +339,10 @@ proc newField*(typ: Type, name: string, default_value_string=""): Field =
         raise newException(ValueError, "`$1` is an invalid field name. " % [name])
     result.name = name
     if default_value_string == "":
-        result.default_value = MNone()
+        result.default_value = MsgVal.none
     else:
         result.default_value =
-            parse_value_string(typ, default_value_string)
+            some parse_value_string(typ, default_value_string)
     result.annotations.new
 
 
@@ -475,8 +476,8 @@ proc parse_primitive_value_string(typ: Type, value_string: string): MsgVal =
                 break
 
         # check that value is in valid range
-        if typ.string_upper_bound != -1 and
-                len(value_string) > typ.string_upper_bound:
+        if typ.string_upper_bound.isSome and
+                len(value_string) > typ.string_upper_bound.get:
             raise newException(InvalidValue,
                 $typ.typ & " / " & value_string &
                 "string must not exceed the maximum length of $1 characters" %

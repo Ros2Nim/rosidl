@@ -36,14 +36,14 @@ suite "base type constructor":
         var base_type = newBaseType(primitive_type)
         check base_type.pkg_name == ""
         check base_type.typ == primitive_type
-        check base_type.string_upper_bound == -1
+        check base_type.string_upper_bound == int.none
 
   test "strings":
     for string_type in ["string", "wstring"]:
         var base_type = newBaseType("$1<=23" % [string_type])
         check base_type.pkg_name == ""
         check base_type.typ == string_type
-        check base_type.string_upper_bound == 23
+        check base_type.string_upper_bound.get == 23
 
         expect ValueError:
           discard newBaseType("$1<=upperbound" % string_type)
@@ -54,12 +54,12 @@ suite "base type constructor":
     var base_type = newBaseType("pkg/Msg")
     check base_type.pkg_name == "pkg"
     check base_type.typ == "Msg"
-    check base_type.string_upper_bound == -1
+    check base_type.string_upper_bound == int.none
 
     base_type = newBaseType("Msg", "pkg")
     check base_type.pkg_name == "pkg"
     check base_type.typ == "Msg"
-    check base_type.string_upper_bound == -1
+    check base_type.string_upper_bound == int.none
 
     expect InvalidResourceName:
       discard newBaseType("Foo")
@@ -117,10 +117,10 @@ suite "fields":
     var field = newField(typ, "foo")
     check field.typ == typ
     check field.name == "foo"
-    check field.default_value.empty()
+    check field.default_value == MsgVal.none
 
     field = newField(typ, "foo", "1")
-    check not field.default_value.empty()
+    check field.default_value.isSome
 
     # with pytest.raises(TypeError):
     #     Field("type", "foo")
