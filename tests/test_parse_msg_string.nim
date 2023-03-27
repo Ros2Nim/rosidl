@@ -54,3 +54,11 @@ suite "msg parse":
     expect(ValueError):
         discard parse_message_string("pkg", "Foo", "bool foo\nbool foo")
     # check "foo" in $(e.value)
+
+  test "const":
+    var msg_spec = parse_message_string("pkg", "Foo", "bool FOO=1")
+    check len(msg_spec.fields) == 0
+    check len(msg_spec.constants) == 1
+    check msg_spec.constants[0].typ == "bool"
+    check msg_spec.constants[0].name == "FOO"
+    check msg_spec.constants[0].value == MBool true

@@ -122,7 +122,7 @@ type
         array_size*: Option[int]
 
     BaseField* = ref object of RootObj
-        annotations*: TableRef[string, seq[string]]
+        annotations*: Table[string, seq[string]]
     
     Constant* = ref object of BaseField
         typ*: string
@@ -342,7 +342,6 @@ proc newField*(typ: Type, name: string, default_value_string=""): Field =
     else:
         result.default_value =
             some parse_value_string(typ, default_value_string)
-    result.annotations.new
 
 
 proc lstrip(line: string, sep = Whitespace): string = line.strip(leading=true, trailing=false, sep)
@@ -448,7 +447,7 @@ type
         msg_name*: string
         fields*: seq[Field]
         constants*: seq[Constant]
-        annotations*: TableRef[string, seq[string]]
+        annotations*: Table[string, seq[string]]
 
 proc newMessageSpecification*(pkg_name, msg_name: string, fields: seq[Field], constants: seq[Constant]): MessageSpecification =
     new result
@@ -456,7 +455,6 @@ proc newMessageSpecification*(pkg_name, msg_name: string, fields: seq[Field], co
     result.msg_name = msg_name
     result.fields = fields
     result.constants = constants
-    result.annotations = newTable[string, seq[string]]()
 
     template checkDupes(fields, named: untyped) =
         let
