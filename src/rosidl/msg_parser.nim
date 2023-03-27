@@ -217,7 +217,7 @@ proc `$`*(self: Field): string =
         else:
             result.add " %s" % [$self.default_value.get]
 
-proc parse_primitive_value_string(typ: Type, value_string: string): MsgVal
+proc parse_primitive_value_string*(typ: Type, value_string: string): MsgVal
 proc parse_value_string(typ: Type, value_string: string): MsgVal
 proc parse_string_array_value_string(element_string: string, expected_size: int): seq[string]
 
@@ -398,7 +398,7 @@ proc partition(line, sep: string): (string, string) =
     let ln = line.split(sep)
     (ln[0], ln[1])
 
-proc parse_primitive_value_string(typ: Type, value_string: string): MsgVal =
+proc parse_primitive_value_string*(typ: Type, value_string: string): MsgVal =
     if not typ.is_primitive_type() or typ.is_array:
         raise newException(ValueError,"the passed type must be a non-array primitive type")
     let primitive_type = typ.typ
@@ -460,23 +460,17 @@ proc parse_primitive_value_string(typ: Type, value_string: string): MsgVal =
     if primitive_type in ["string", "wstring"]:
         # remove outer quotes to allow leading / trailing spaces in the string
         var value_string = value_string
-        for quote in ["'", "\""]:
-            if value_string.startswith(quote) and value_string.endswith(quote):
-                value_string = value_string[1 ..< ^1]
-                var m: RegexMatch
-                if value_string .match(re("(?<!\\)" & quote), m):
-                    raise newException(InvalidValue,
-                        $primitive_type & " / " & value_string &
-                        "string inner quotes not properly escaped")
-                value_string = value_string.replace("\\" & quote, quote)
-                break
+        let qchar = value_string[0]
+        if qchar in ['"', '\'']:
+            ## probably close enough?
+            value_string = unescape(value_string, $qchar, $qchar)
 
         # check that value is in valid range
         if typ.string_upper_bound.isSome and
                 len(value_string) > typ.string_upper_bound.get:
             raise newException(InvalidValue,
                 $typ.typ & " / " & value_string &
-                "string must not exceed the maximum length of $1 characters" %
+                " string must not exceed the maximum length of $1 characters" %
                 [$typ.string_upper_bound])
 
         return MString value_string
