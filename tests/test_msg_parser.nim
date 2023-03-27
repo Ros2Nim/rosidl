@@ -195,3 +195,4 @@ suite "types":
     check $(newType("pkg/Foo[]")) == "pkg/Foo[]"
     check $(newType("pkg/Foo[5]")) == "pkg/Foo[5]"
     check $(newType("pkg/Foo[<=5]")) == "pkg/Foo[<=5]"
+  

@@ -44,18 +44,9 @@ const PRIMITIVE_TYPES* = [
     "time",  # for compatibility only
 ]
 
-let VALID_PACKAGE_NAME_PATTERN*: Regex = re"""(?x)
-    ^
-    ((?:
-        .*__    # no consecutive underscores
-      | .*_     # no underscore at the end
-      | [a-z]       # first character must be alpha
-         [a-z0-9_]* # followed by alpha, numeric, and underscore
-    ))
-    $
-    """
-
 let 
+    VALID_PACKAGE_NAME_PATTERN: Regex = re"^([a-z][a-z0-9_]*)$"
+
     VALID_FIELD_NAME_PATTERN = VALID_PACKAGE_NAME_PATTERN
     # relaxed patterns used for compatibility with ROS 1 messages
     # VALID_FIELD_NAME_PATTERN = re.compile("^[A-Za-z][A-Za-z0-9_]*$")
@@ -67,7 +58,8 @@ let
 proc is_valid_field_name*(name: string): bool =
     var m: RegexMatch
     if name.match(VALID_FIELD_NAME_PATTERN, m):
-        return m.groupFirstCapture(0, name) == name
+        return m.groupFirstCapture(0, name) == name and 
+                not name.endswith("_") and "__" notin name
 
 proc is_valid_message_name*(name: string): bool =
     var name = name
@@ -96,7 +88,8 @@ proc is_valid_constant_name*(name: string): bool =
 proc is_valid_package_name*(name: string): bool =
     var m: RegexMatch
     if name.match(VALID_PACKAGE_NAME_PATTERN, m):
-        return m.groupFirstCapture(0, name) == name
+        return m.groupFirstCapture(0, name) == name and
+                not name.endswith("_") and "__" notin name
 
 type
     InvalidSpecification* = object of Exception
