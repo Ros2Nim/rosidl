@@ -126,7 +126,7 @@ type
     Type* = ref object of BaseType
         is_array*: bool
         is_upper_bound*: bool
-        array_size*: int
+        array_size*: Option[int]
 
     BaseField* = ref object of RootObj
         annotations*: TableRef[string, seq[string]]
@@ -145,10 +145,10 @@ proc is_primitive_type*(self: BaseType): bool =
     return self.pkg_name == ""
 
 proc is_dynamic_array*(self: Type): bool =
-    return self.is_array and (self.array_size > -1 or self.is_upper_bound)
+    return self.is_array and (self.array_size.isSome or self.is_upper_bound)
 
 proc is_fixed_size_array*(self: Type): bool =
-    return self.is_array and self.array_size > -1 and not self.is_upper_bound
+    return self.is_array and self.array_size.isSome and not self.is_upper_bound
 
 proc empty*(self: MsgVal): bool = return self.kind == MsgValKind.MNone
 
@@ -194,8 +194,8 @@ proc `$`*(self: Type): string =
         result.add '['
         if self.is_upper_bound:
             result.add ARRAY_UPPER_BOUND_TOKEN
-        if self.array_size > -1:
-            result.add $self.array_size
+        if self.array_size.isSome:
+            result.add $self.array_size.get
         result.add ']'
 
 proc `$`*(self: MsgVal): string =
@@ -287,7 +287,7 @@ proc newType*(typstring: string, context_package_name=""): Type =
     var typstring = typstring
     result.is_array = "]" in typstring
 
-    result.array_size = -1
+    result.array_size = int.none
     result.is_upper_bound = false
     if result.is_array:
         let index: int = typstring.find("[")
@@ -311,11 +311,11 @@ proc newType*(typstring: string, context_package_name=""): Type =
                 "an upper bound") %
                 [ARRAY_UPPER_BOUND_TOKEN, typstring])
             try:
-                result.array_size = parseInt(array_size_string)
+                result.array_size = some parseInt(array_size_string)
             except ValueError:
                 raise ex
             # check valid range
-            if result.array_size <= 0:
+            if result.array_size.get <= 0:
                 raise ex
 
         typstring = typstring[0..<index]
@@ -632,20 +632,20 @@ proc parse_value_string(typ: Type, value_string: string): MsgVal =
             # String arrays need special processing as the comma can be part of a quoted string
             # and not a separator of array elements
             value_strings = parse_string_array_value_string(
-                elements_string, typ.array_size)
+                elements_string, typ.array_size.get)
         else:
             # value_strings = elements_string.split(",") if elements_string else []
             if elements_string != "":
                 value_strings = elements_string.split(",")
-        if typ.array_size > -1:
+        if typ.array_size.isSome:
             # check for exact size
-            if not typ.is_upper_bound and len(value_strings) != typ.array_size:
+            if not typ.is_upper_bound and len(value_strings) != typ.array_size.get:
                 raise newException(InvalidValue,
                     $typ & " / " & value_string &
                     "array must have exactly $1 elements, not $2" %
                     [$typ.array_size, $len(value_strings)])
             # check for upper bound
-            if typ.is_upper_bound and len(value_strings) > typ.array_size:
+            if typ.is_upper_bound and len(value_strings) > typ.array_size.get:
                 raise newException(InvalidValue,
                     $typ & " / " & value_string &
                     "array must have not more than $1 elements, not $2" %

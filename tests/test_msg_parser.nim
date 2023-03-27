@@ -130,7 +130,6 @@ suite "fields":
     var typ = newType("bool[2]")
     check typ.is_array == true
     var field = newField(typ, "foo", "[false, true]")
-    echo "field:defval: ", field.default_value.get
     check field.default_value.get.aval == [MBool false, MBool true]
 
   test "field empty array constructor":
@@ -146,3 +145,22 @@ suite "fields":
   test "field methods":
     check (newField(newType("bool"), "foo", "1") ==
             newField(newType("bool"), "foo", "true"))
+
+suite "type xtors":
+  test "type basics":
+    let typ = newType("bool")
+    check typ.pkg_name == ""
+    check typ.typ == "bool"
+    check typ.string_upper_bound == int.none
+    check not typ.is_array
+    check typ.array_size == int.none
+    check not typ.is_upper_bound
+
+  test "type array basics":
+    let typ = newType("bool[]")
+    check typ.pkg_name == ""
+    check typ.typ == "bool"
+    check typ.string_upper_bound == int.none
+    check typ.is_array
+    check typ.array_size == int.none
+    check not typ.is_upper_bound
