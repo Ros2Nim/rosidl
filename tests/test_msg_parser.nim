@@ -81,3 +81,4 @@ test "base type methods":
     check $(newBaseType("bool")) == "bool"
     check $(newBaseType("string<=5")) == "string<=5"
     check $(newBaseType("wstring<=5")) == "wstring<=5"
+
