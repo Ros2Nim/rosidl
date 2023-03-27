@@ -684,14 +684,14 @@ proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageS
                 # append to previous field / constant if available or ignore
                 if not last_element.isNil:
                     last_element.annotations.mgetOrPut("comment", @[]).add(comment)
-                echo "skip comment indented..."
+                # echo "skip comment indented..."
                 continue
             # collect "unused" comments
             current_comments.add(comment)
 
             line = line.strip(leading=false, trailing=true)
             if line == "":
-                echo "ignore empty line"
+                # echo "ignore empty line"
                 continue
 
         let (typstring, mrest) = line.partition(" ")
