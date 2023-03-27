@@ -97,7 +97,7 @@ suite "constants":
         discard newConstant("bool", "FOO")
 
   test "constant methods":
-    # assert Constant("bool", "FOO", "1") != 23
+    # check Constant("bool", "FOO", "1") != 23
 
     check newConstant("bool", "FOO", "1") == newConstant("bool", "FOO", "1")
     check newConstant("bool", "FOO", "1") != newConstant("bool", "FOO", "0")
@@ -109,3 +109,33 @@ suite "constants":
     check $(newConstant("string", "FOO", "foo")) == "string FOO='foo'"
     check $(newConstant("wstring", "FOO", "foo")) == "wstring FOO='foo'"
 
+
+suite "fields":
+
+  test "field_constructor":
+    var typ = newType("bool")
+    var field = newField(typ, "foo")
+    check field.typ == typ
+    check field.name == "foo"
+    check field.default_value.empty()
+
+    field = newField(typ, "foo", "1")
+    check not field.default_value.empty()
+
+    # with pytest.raises(TypeError):
+    #     Field("type", "foo")
+
+    # with pytest.raises(NameError):
+    #     Field(typ, "foo bar")
+
+    # typ = Type("bool[2]")
+    # field = Field(typ, "foo", "[false, true]")
+    # check field.default_value == [False, True]
+
+    # typ = Type("bool[]")
+    # field = Field(typ, "foo", "[false, true, false]")
+    # check field.default_value == [False, True, False]
+
+    # typ = Type("bool[3]")
+    # with pytest.raises(InvalidValue):
+    #     Field(typ, "foo", "[false, true]")

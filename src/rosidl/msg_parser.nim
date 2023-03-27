@@ -149,6 +149,8 @@ proc is_dynamic_array*(self: Type): bool =
 proc is_fixed_size_array*(self: Type): bool =
     return self.is_array and self.array_size > -1 and not self.is_upper_bound
 
+proc empty*(self: MsgVal): bool = return self.kind == MsgValKind.MNone
+
 proc `==`*(x, y: BaseType): bool =
     result = x.pkg_name == y.pkg_name and 
         x.typ == y.typ and
@@ -330,6 +332,7 @@ proc newConstant*(primitive_type, name: string, value_string = ""): Constant =
         newType(primitive_type), value_string)
 
 proc newField*(typ: Type, name: string, default_value_string=""): Field =
+    new result
     result.typ = typ
     if not is_valid_field_name(name):
         raise newException(ValueError, "`$1` is an invalid field name. " % [name])
