@@ -164,3 +164,20 @@ suite "type xtors":
     check typ.is_array
     check typ.array_size == int.none
     check not typ.is_upper_bound
+  
+  test "typ error":
+    expect ValueError:
+      discard newType("bool]")
+
+  test "sized arr":
+    let typ = newType("bool[5]")
+    check typ.typ == "bool"
+    check typ.is_array
+    check typ.array_size.get == 5
+    check not typ.is_upper_bound
+  
+  test "bounded arr":
+    let typ = newType("bool[<=5]")
+    check typ.array_size.get == 5
+    check typ.is_upper_bound
+  
