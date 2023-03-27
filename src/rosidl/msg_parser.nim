@@ -154,6 +154,24 @@ proc `==`*(x, y: BaseType): bool =
         x.typ == y.typ and
         x.string_upper_bound == y.string_upper_bound
 
+proc `==`*(x, y: BaseField): bool =
+    result =
+        x.annotations == y.annotations
+
+proc `==`*(x, y: Constant): bool =
+    result =
+        x.BaseField == y.BaseField and
+        x.typ == y.typ and 
+        x.name == y.name and
+        x.value == y.value
+
+proc `==`*(x, y: Field): bool =
+    result =
+        x.BaseField == y.BaseField and
+        x.name == y.name and 
+        x.typ == y.typ and 
+        x.default_value == y.default_value 
+
 proc `$`*(self: BaseType): string =
     if self.pkg_name != "":
         return self.pkg_name & "/" & self.typ
@@ -454,7 +472,8 @@ proc parse_primitive_value_string(typ: Type, value_string: string): MsgVal =
                 break
 
         # check that value is in valid range
-        if len(value_string) > typ.string_upper_bound:
+        if typ.string_upper_bound != -1 and
+                len(value_string) > typ.string_upper_bound:
             raise newException(InvalidValue,
                 $typ.typ & " / " & value_string &
                 "string must not exceed the maximum length of $1 characters" %

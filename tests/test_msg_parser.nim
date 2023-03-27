@@ -104,8 +104,8 @@ suite "constants":
     check newConstant("bool", "FOO", "1") != newConstant("bool", "BAR", "1")
     check newConstant("bool", "FOO", "1") != newConstant("byte", "FOO", "1")
 
-    check $(newConstant("bool", "FOO", "1")) == "bool FOO=True"
+    check $(newConstant("bool", "FOO", "1")) == "bool FOO=true"
 
-    check $(newConstant("string", "FOO", "foo")) == "string FOO=\"foo\""
-    check $(newConstant("wstring", "FOO", "foo")) == "wstring FOO=\"foo\""
+    check $(newConstant("string", "FOO", "foo")) == "string FOO='foo'"
+    check $(newConstant("wstring", "FOO", "foo")) == "wstring FOO='foo'"
 
