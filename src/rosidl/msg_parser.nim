@@ -670,8 +670,10 @@ proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageS
         # ignore empty lines
         if line == "":
             # file-level comments stop at the first empty line
+            echo "ignore empty line"
             continue
 
+        echo "processing line: ", line
         var index = line.find(COMMENT_DELIMITER)
 
         # comment
@@ -681,24 +683,28 @@ proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageS
             line = line[0..<index]
 
         if comment != "":
-            if line.strip() != "":
+            if line.strip() == "":
                 # indented comment line
                 # append to previous field / constant if available or ignore
                 if not last_element.isNil:
                     last_element.annotations.mgetOrPut("comment", @[]).add(comment)
+                echo "skip comment indented..."
                 continue
             # collect "unused" comments
             current_comments.add(comment)
 
             line = line.strip(leading=false, trailing=true)
             if line == "":
+                echo "ignore empty line"
                 continue
+        echo "processing line comment: ", comment
 
         let (typstring, mrest) = line.partition(" ")
         var rest = mrest.lstrip()
 
+        echo "REST: ", rest
         if rest == "":
-            raise newException(InvalidFieldDefinition,line)
+            raise newException(InvalidFieldDefinition, line)
 
         index = rest.find(CONSTANT_SEPARATOR)
         if index == -1:

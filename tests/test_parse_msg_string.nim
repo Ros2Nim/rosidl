@@ -24,6 +24,6 @@ suite "msg parse":
     check len(msg_spec.fields) == 0
     check len(msg_spec.constants) == 0
 
-  # test "invalid ":
-  #   expect(InvalidFieldDefinition):
-  #     discard parse_message_string("pkg", "Foo", "bool  # comment")
+  test "invalid ":
+    expect(InvalidFieldDefinition):
+      discard parse_message_string("pkg", "Foo", "bool  # comment")
