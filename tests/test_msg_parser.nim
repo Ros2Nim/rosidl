@@ -128,6 +128,7 @@ suite "fields":
 
   test "field array constructor":
     var typ = newType("bool[2]")
+    check typ.is_array == true
     var field = newField(typ, "foo", "[false, true]")
     echo "field:defval: ", field.default_value.get
     # check field.default_value.get == [false, true]

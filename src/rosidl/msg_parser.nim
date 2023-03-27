@@ -223,7 +223,7 @@ proc parse_value_string(typ: Type, value_string: string): MsgVal
 proc parse_string_array_value_string(element_string: string, expected_size: int): seq[string]
 
 proc setupBaseType*(result: var BaseType, typstring: string, context_package_name="") =
-    new result
+    assert not result.isNil
     # check for primitive types
     if typstring in PRIMITIVE_TYPES:
         result.pkg_name = ""
@@ -275,7 +275,7 @@ proc newBaseType*(typstring: string, context_package_name=""): BaseType =
     result.setupBaseType(typstring, context_package_name)
 
 proc newType*(typstring: string, context_package_name=""): Type =
-    result.new
+    new result
 
     # check for array brackets
     var typstring = typstring
@@ -305,7 +305,6 @@ proc newType*(typstring: string, context_package_name=""): Type =
                 "an upper bound") %
                 [ARRAY_UPPER_BOUND_TOKEN, typstring])
             try:
-                echo "array_size_string: ", array_size_string
                 result.array_size = parseInt(array_size_string)
             except ValueError:
                 raise ex
@@ -414,14 +413,11 @@ proc parse_primitive_value_string(typ: Type, value_string: string): MsgVal =
         if vstr notin true_values and vstr notin false_values:
             raise newException(InvalidValue,
                 $primitive_type & " / " & value_string &
-                "must be either `true` / `1` or `false` / `0`")
+                " must be either `true` / `1` or `false` / `0`")
         return MBool(vstr in true_values)
 
     if primitive_type in ["byte", "char"]:
         # same as uint8
-        let ex = newException(InvalidValue,
-                $primitive_type & " / " & value_string &
-                          "must be a valid integer value >= 0 and <= 255")
         return MByte parseInt(value_string).byte
 
     if primitive_type in ["float32", "float64"]:
@@ -430,7 +426,7 @@ proc parse_primitive_value_string(typ: Type, value_string: string): MsgVal =
         except ValueError:
             raise newException(InvalidValue,
                 $primitive_type & " / " & value_string &
-                "must be a floating point number using `.` as the separator")
+                " must be a floating point number using `.` as the separator")
 
     if primitive_type in [
         "int8", "uint8",
