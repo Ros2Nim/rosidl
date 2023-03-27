@@ -43,14 +43,18 @@ const PRIMITIVE_TYPES* = [
     "time",  # for compatibility only
 ]
 
-let VALID_PACKAGE_NAME_PATTERN: Regex = re"""(?x)
+let VALID_PACKAGE_NAME_PATTERN*: Regex = re"""(?x)
     ^
-    (?!.*__)    # no consecutive underscores
-    (?!.*_$)    # no underscore at the end
-    [a-z]       # first character must be alpha
-    [a-z0-9_]*  # followed by alpha, numeric, and underscore
+    (?:
+        .*__    # no consecutive underscores
+      | .*_     # no underscore at the end
+      | [a-z]       # first character must be alpha
+        [a-z0-9_]*  # followed by alpha, numeric, and underscore
+    )
     $
     """
+
+var r = re"""(?x) ^ (?!.*__) (?!.*_$) [a-z] [a-z0-9_]* $ """
 
 let 
     VALID_FIELD_NAME_PATTERN = VALID_PACKAGE_NAME_PATTERN
