@@ -350,7 +350,13 @@ proc rstrip(line: string, sep = Whitespace): string = line.strip(leading=false, 
 
 proc partition(line, sep: string): (string, string) =
     let ln = line.split(sep)
-    (ln[0], ln[1])
+    echo "partition: ", repr ln
+    if ln.len() == 0:
+        ("", "")
+    elif ln.len() == 1:
+        (ln[0], "")
+    else:
+        (ln[0], ln[1])
 
 proc parse_primitive_value_string*(typ: Type, value_string: string): MsgVal =
     if not typ.is_primitive_type() or typ.is_array:
@@ -450,6 +456,7 @@ proc newMessageSpecification*(pkg_name, msg_name: string, fields: seq[Field], co
     result.msg_name = msg_name
     result.fields = fields
     result.constants = constants
+    result.annotations = newTable[string, seq[string]]()
 
     template checkDupes(fields, named: untyped) =
         let
@@ -630,14 +637,16 @@ proc extract_file_level_comments(message_string: string): (seq[string], seq[stri
     var lines = message_string.splitlines()
     var index = 0
     for idx, line in lines:
+        # var line = line.strip()
+        var line = line
         if line.startsWith(COMMENT_DELIMITER):
-            var ln = line
-            ln.removePrefix(COMMENT_DELIMITER)
-            result[0].add ln
+            line.removePrefix(COMMENT_DELIMITER)
+            result[0].add line
         else:
             index = idx
             break
-    for idx in 0..<index: result[1].add lines[idx]
+    for idx in index..lines.high:
+        result[1].add lines[idx]
 
 proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageSpecification =
     var
@@ -651,6 +660,9 @@ proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageS
     var
         current_comments: seq[string]
         last_element: BaseField
+
+    echo "MESSAGE_COMMENTS: ", message_comments
+    echo "LINES: ", lines
 
     for line in lines:
         var line = line.strip(leading=true, trailing=false, Whitespace)
@@ -679,7 +691,7 @@ proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageS
             current_comments.add(comment)
 
             line = line.strip(leading=false, trailing=true)
-            if line != "":
+            if line == "":
                 continue
 
         let (typstring, mrest) = line.partition(" ")

@@ -15,6 +15,15 @@ suite "msg parse":
   test "test_parse_message_string":
     var msg_spec = parse_message_string("pkg", "Foo", "")
     check msg_spec.base_type.pkg_name == "pkg"
-    check msg_spec.base_type.type == "Foo"
+    check msg_spec.base_type.typ == "Foo"
     check len(msg_spec.fields) == 0
     check len(msg_spec.constants) == 0
+
+  test "comment ":
+    var msg_spec = parse_message_string("pkg", "Foo", "#comment\n \n  # comment")
+    check len(msg_spec.fields) == 0
+    check len(msg_spec.constants) == 0
+
+  # test "invalid ":
+  #   expect(InvalidFieldDefinition):
+  #     discard parse_message_string("pkg", "Foo", "bool  # comment")
