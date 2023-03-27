@@ -62,3 +62,11 @@ suite "msg parse":
     check msg_spec.constants[0].typ == "bool"
     check msg_spec.constants[0].name == "FOO"
     check msg_spec.constants[0].value == MBool true
+
+  test "const issues":
+    expect(ValueError):
+        discard parse_message_string("pkg", "Foo", "pkg/Bar foo=1")
+    expect(ValueError):
+        discard parse_message_string("pkg", "Foo", "bool foo=1")
+    expect(ValueError):
+        discard parse_message_string("pkg", "Foo", "bool FOO=1\nbool FOO=1")
