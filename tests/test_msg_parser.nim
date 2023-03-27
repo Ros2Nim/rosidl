@@ -142,3 +142,7 @@ suite "fields":
     let typ = newType("bool[3]")
     expect InvalidValue:
         discard newField(typ, "foo", "[false, true]")
+
+  test "field methods":
+    check (newField(newType("bool"), "foo", "1") ==
+            newField(newType("bool"), "foo", "true"))

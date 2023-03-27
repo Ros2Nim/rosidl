@@ -157,9 +157,15 @@ proc `==`*(x, y: BaseType): bool =
         x.typ == y.typ and
         x.string_upper_bound == y.string_upper_bound
 
-proc `==`*(x, y: BaseField): bool =
+proc `==`*(x, y: Type): bool =
     result =
-        x.annotations == y.annotations
+        x.BaseType == y.BaseType and
+        x.is_array == y.is_array  and 
+        x.is_upper_bound == y.is_upper_bound and 
+        x.array_size == y.array_size 
+
+proc `==`*(x, y: BaseField): bool =
+    result = x.annotations == y.annotations
 
 proc `==`*(x, y: Constant): bool =
     result =
