@@ -2,7 +2,7 @@ import std / [strutils, strformat, sequtils, tables, options]
 import patty, regex
 export options
 
-const PACKAGE_NAME_MESSAGE_typSEPARATOR* = "/"
+const PACKAGE_NAME_MESSAGE_TYPE_SEPARATOR* = "/"
 const COMMENT_DELIMITER* = '#'
 const CONSTANT_SEPARATOR* = '='
 const ARRAY_UPPER_BOUND_TOKEN* = "<="
@@ -247,7 +247,7 @@ proc setupBaseType*(result: var BaseType, typstring: string, context_package_nam
 
     else:
         # split non-primitive type information
-        let parts = typstring.split(PACKAGE_NAME_MESSAGE_typSEPARATOR)
+        let parts = typstring.split(PACKAGE_NAME_MESSAGE_TYPE_SEPARATOR)
         if not (len(parts) == 2 or
                 (len(parts) == 1 and context_package_name isnot "")):
             raise newException(InvalidResourceName, typstring)
@@ -345,52 +345,6 @@ proc newField*(typ: Type, name: string, default_value_string=""): Field =
     result.annotations.new
 
 
-
-variantp Items:
-    IField(f: Field)
-    IConstant(c: Constant)
-    INone
-
-type
-    MessageSpecification* = ref object
-        pkg_name*: string
-        msg_name*: string
-        fields*: seq[Field]
-        constants*: seq[Constant]
-        annotations*: TableRef[string, seq[string]]
-
-proc newMessageSpecification*(pkg_name, msg_name: string, fields: seq[Field], constants: seq[Constant]): MessageSpecification =
-    new result
-    result.pkg_name = pkg_name
-    result.msg_name = msg_name
-    result.fields = fields
-    result.constants = constants
-
-    let
-        field_names = fields.mapIt(it.name)
-        duplicate_field_names = toCountTable(field_names)
-    
-    var dupes: seq[string]
-    for f, c in duplicate_field_names:
-        if c > 1: dupes.add f
-    
-    if dupes.len() > 0:
-        raise newException(ValueError,
-                "the fields iterable contains duplicate names: $1" % [dupes.join(",")])
-
-proc extract_file_level_comments(message_string: string): (seq[string], seq[string]) =
-    var lines = message_string.splitlines()
-    var index = 0
-    for idx, line in lines:
-        if line.startsWith(COMMENT_DELIMITER):
-            var ln = line
-            ln.removePrefix(COMMENT_DELIMITER)
-            result[0].add ln
-        else:
-            index = idx
-            break
-    for idx in 0..<index: result[1].add lines[idx]
-
 proc lstrip(line: string, sep = Whitespace): string = line.strip(leading=true, trailing=false, sep)
 proc rstrip(line: string, sep = Whitespace): string = line.strip(leading=false, trailing=true, sep)
 
@@ -478,6 +432,49 @@ proc parse_primitive_value_string*(typ: Type, value_string: string): MsgVal =
     raise newException(InvalidValue,
                 "unknown primitive type `$1`" % [primitive_type])
 
+type
+    MessageSpecification* = ref object
+        base_type*: BaseType
+        msg_name*: string
+        fields*: seq[Field]
+        constants*: seq[Constant]
+        annotations*: TableRef[string, seq[string]]
+
+proc newMessageSpecification*(pkg_name, msg_name: string, fields: seq[Field], constants: seq[Constant]): MessageSpecification =
+    new result
+    result.base_type = newBaseType(pkg_name & PACKAGE_NAME_MESSAGE_TYPE_SEPARATOR & msg_name)
+    result.msg_name = msg_name
+    result.fields = fields
+    result.constants = constants
+
+    template checkDupes(fields, named: untyped) =
+        let
+            field_names = fields.mapIt(it.name)
+            duplicate_field_names = toCountTable(field_names)
+        
+        var dupes: seq[string]
+        for f, c in duplicate_field_names:
+            if c > 1: dupes.add f
+        
+        if dupes.len() > 0:
+            raise newException(ValueError,
+                    "the $1 iterable contains duplicate names: $2" % [named, dupes.join(",")])
+    
+    fields.checkDupes("fields")
+    constants.checkDupes("consts")
+
+proc `$`*(self: MessageSpecification): string =
+    ## """Output an equivalent .msg IDL string."""
+    result = "# " & $(self.base_type) & "\n"
+    for constant in self.constants:
+        result.add($(constant))
+        result.add("\n")
+    for field in self.fields:
+        result.add($(field))
+        result.add("\n")
+    # Get rid of last newline
+    result.stripLineEnd()
+    
 proc process_comments(instance: BaseField or MessageSpecification) =
     if "comment" in instance.annotations:
         var lines = instance.annotations["comment"]
@@ -514,6 +511,19 @@ proc process_comments(instance: BaseField or MessageSpecification) =
         if lines.len() > 0:
             var text = lines.join("\n")
             instance.annotations["comment"] = dedent(text).split("\n")
+
+proc extract_file_level_comments(message_string: string): (seq[string], seq[string]) =
+    var lines = message_string.splitlines()
+    var index = 0
+    for idx, line in lines:
+        if line.startsWith(COMMENT_DELIMITER):
+            var ln = line
+            ln.removePrefix(COMMENT_DELIMITER)
+            result[0].add ln
+        else:
+            index = idx
+            break
+    for idx in 0..<index: result[1].add lines[idx]
 
 proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageSpecification =
     var
