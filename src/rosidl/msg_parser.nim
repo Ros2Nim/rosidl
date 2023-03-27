@@ -432,6 +432,42 @@ proc parse_primitive_value_string(typ: Type, value_string: string): MsgVal =
     raise newException(InvalidValue,
                 "unknown primitive type `$1`" % [primitive_type])
 
+proc process_comments(instance: BaseField or MessageSpecification) =
+    if "comment" in instance.annotations:
+        var lines = instance.annotations["comment"]
+
+        # look for a unit in brackets
+        # the unit should not contains a comma since it might be a range
+        let
+            comment = lines.join("\n")
+            matches = comment.findall(re"(\s*\[([^,\]]+)\])")
+        
+        if len(matches) == 1:
+            ## checkme
+            instance.annotations["unit"].add matches[0].groupFirstCapture(0, comment)
+            # remove the unit from the comment
+            for i, line in lines:
+                lines[i] = line.replace(matches[0].groupFirstCapture(0, line), "")
+
+        # remove empty leading lines
+
+        while lines.len() > 0 and lines[0] == "":
+            lines.delete(0)
+        # remove empty trailing lines
+        while lines.len() > 0 and lines[^1] == "":
+            lines.delete(lines.high)
+        # remove consecutive empty lines
+        var length = len(lines)
+        var i = 1
+        while i < length:
+            if lines[i] == "" and lines[i - 1] == "":
+                lines[i - 1..<i + 1] = [""]
+                length -= 1
+                continue
+            i += 1
+        if lines.len() > 0:
+            var text = lines.join("\n")
+            instance.annotations["comment"] = dedent(text).split("\n")
 
 proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageSpecification =
     var
@@ -509,55 +545,18 @@ proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageS
         last_element.annotations.mgetOrPut("comment", @[]).add current_comments
         current_comments = @[]
 
-    # msg = MessageSpecification(pkg_name, msg_name, fields, constants)
-    # msg.annotations["comment"] = message_comments
+    var msg = newMessageSpecification(pkg_name, msg_name, fields, constants)
+    msg.annotations["comment"] = message_comments
 
-    # # condense comment lines, extract special annotations
-    # process_comments(msg)
-    # for field in fields:
-    #     process_comments(field)
-    # for constant in constants:
-    #     process_comments(constant)
+    # condense comment lines, extract special annotations
+    process_comments(msg)
+    for field in fields:
+        process_comments(field)
+    for constant in constants:
+        process_comments(constant)
 
-    # return msg
+    return msg
 
-
-proc process_comments(instance: BaseField) =
-    if "comment" in instance.annotations:
-        var lines = instance.annotations["comment"]
-
-        # look for a unit in brackets
-        # the unit should not contains a comma since it might be a range
-        let
-            comment = lines.join("\n")
-            matches = comment.findall(re"(\s*\[([^,\]]+)\])")
-        
-        if len(matches) == 1:
-            ## checkme
-            instance.annotations["unit"].add matches[0].groupFirstCapture(0, comment)
-            # remove the unit from the comment
-            for i, line in lines:
-                lines[i] = line.replace(matches[0].groupFirstCapture(0, line), "")
-
-        # remove empty leading lines
-
-        while lines.len() > 0 and lines[0] == "":
-            lines.delete(0)
-        # remove empty trailing lines
-        while lines.len() > 0 and lines[^1] == "":
-            lines.delete(lines.high)
-        # remove consecutive empty lines
-        var length = len(lines)
-        var i = 1
-        while i < length:
-            if lines[i] == "" and lines[i - 1] == "":
-                lines[i - 1..<i + 1] = [""]
-                length -= 1
-                continue
-            i += 1
-        if lines.len() > 0:
-            var text = lines.join("\n")
-            instance.annotations["comment"] = dedent(text).split("\n")
 
 proc parse_value_string(typ: Type, value_string: string): MsgVal =
     if typ.is_primitive_type() and not typ.is_array:
