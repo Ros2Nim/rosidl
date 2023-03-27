@@ -432,6 +432,10 @@ proc parse_primitive_value_string*(typ: Type, value_string: string): MsgVal =
     raise newException(InvalidValue,
                 "unknown primitive type `$1`" % [primitive_type])
 
+
+## Parse Messages
+## 
+
 type
     MessageSpecification* = ref object
         base_type*: BaseType
@@ -511,106 +515,6 @@ proc process_comments(instance: BaseField or MessageSpecification) =
         if lines.len() > 0:
             var text = lines.join("\n")
             instance.annotations["comment"] = dedent(text).split("\n")
-
-proc extract_file_level_comments(message_string: string): (seq[string], seq[string]) =
-    var lines = message_string.splitlines()
-    var index = 0
-    for idx, line in lines:
-        if line.startsWith(COMMENT_DELIMITER):
-            var ln = line
-            ln.removePrefix(COMMENT_DELIMITER)
-            result[0].add ln
-        else:
-            index = idx
-            break
-    for idx in 0..<index: result[1].add lines[idx]
-
-proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageSpecification =
-    var
-        fields: seq[Field]
-        constants: seq[Constant]
-        message_string = message_string.replace("\t", " ")
-    
-    let
-        (message_comments, lines) = extract_file_level_comments(message_string)
-    
-    var
-        current_comments: seq[string]
-        last_element: BaseField
-
-    for line in lines:
-        var line = line.strip(leading=true, trailing=false, Whitespace)
-
-        # ignore empty lines
-        if line == "":
-            # file-level comments stop at the first empty line
-            continue
-
-        var index = line.find(COMMENT_DELIMITER)
-
-        # comment
-        var comment = ""
-        if index >= 0:
-            comment = line[index..^1].lstrip({COMMENT_DELIMITER})
-            line = line[0..<index]
-
-        if comment != "":
-            if line.strip() != "":
-                # indented comment line
-                # append to previous field / constant if available or ignore
-                if not last_element.isNil:
-                    last_element.annotations.mgetOrPut("comment", @[]).add(comment)
-                continue
-            # collect "unused" comments
-            current_comments.add(comment)
-
-            line = line.strip(leading=false, trailing=true)
-            if line != "":
-                continue
-
-        let (typstring, mrest) = line.partition(" ")
-        var rest = mrest.lstrip()
-
-        if rest == "":
-            raise newException(InvalidFieldDefinition,line)
-
-        index = rest.find(CONSTANT_SEPARATOR)
-        if index == -1:
-            # line contains a field
-            let (field_name, mdefault_value_string) = rest.partition(" ")
-            let default_value_string = mdefault_value_string.lstrip()
-            try:
-                fields.add(newField(
-                    newType(typstring, context_package_name=pkg_name),
-                    field_name, default_value_string))
-            except Exception as err:
-                # echo( fmt"Error processing "{line}" of "{pkg}/{msg}": "{err}"",)
-                raise err
-            last_element = fields[-1]
-
-        else:
-            # line contains a constant
-            var (name, value) = rest.partition($CONSTANT_SEPARATOR)
-            name = name.rstrip()
-            value = value.lstrip()
-            constants.add(newConstant(typstring, name, value))
-            last_element = constants[-1]
-
-        # add "unused" comments to the field / constant
-        last_element.annotations.mgetOrPut("comment", @[]).add current_comments
-        current_comments = @[]
-
-    var msg = newMessageSpecification(pkg_name, msg_name, fields, constants)
-    msg.annotations["comment"] = message_comments
-
-    # condense comment lines, extract special annotations
-    process_comments(msg)
-    for field in fields:
-        process_comments(field)
-    for constant in constants:
-        process_comments(constant)
-
-    return msg
 
 
 proc parse_value_string(typ: Type, value_string: string): MsgVal =
@@ -721,4 +625,104 @@ proc parse_string_array_value_string(element_string: string, expected_size: int)
         if len(element_string) > 0 and element_string[0] == ',':
             element_string = element_string[1..^1]
     return value_strings
+
+proc extract_file_level_comments(message_string: string): (seq[string], seq[string]) =
+    var lines = message_string.splitlines()
+    var index = 0
+    for idx, line in lines:
+        if line.startsWith(COMMENT_DELIMITER):
+            var ln = line
+            ln.removePrefix(COMMENT_DELIMITER)
+            result[0].add ln
+        else:
+            index = idx
+            break
+    for idx in 0..<index: result[1].add lines[idx]
+
+proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageSpecification =
+    var
+        fields: seq[Field]
+        constants: seq[Constant]
+        message_string = message_string.replace("\t", " ")
+    
+    let
+        (message_comments, lines) = extract_file_level_comments(message_string)
+    
+    var
+        current_comments: seq[string]
+        last_element: BaseField
+
+    for line in lines:
+        var line = line.strip(leading=true, trailing=false, Whitespace)
+
+        # ignore empty lines
+        if line == "":
+            # file-level comments stop at the first empty line
+            continue
+
+        var index = line.find(COMMENT_DELIMITER)
+
+        # comment
+        var comment = ""
+        if index >= 0:
+            comment = line[index..^1].lstrip({COMMENT_DELIMITER})
+            line = line[0..<index]
+
+        if comment != "":
+            if line.strip() != "":
+                # indented comment line
+                # append to previous field / constant if available or ignore
+                if not last_element.isNil:
+                    last_element.annotations.mgetOrPut("comment", @[]).add(comment)
+                continue
+            # collect "unused" comments
+            current_comments.add(comment)
+
+            line = line.strip(leading=false, trailing=true)
+            if line != "":
+                continue
+
+        let (typstring, mrest) = line.partition(" ")
+        var rest = mrest.lstrip()
+
+        if rest == "":
+            raise newException(InvalidFieldDefinition,line)
+
+        index = rest.find(CONSTANT_SEPARATOR)
+        if index == -1:
+            # line contains a field
+            let (field_name, mdefault_value_string) = rest.partition(" ")
+            let default_value_string = mdefault_value_string.lstrip()
+            try:
+                fields.add(newField(
+                    newType(typstring, context_package_name=pkg_name),
+                    field_name, default_value_string))
+            except Exception as err:
+                # echo( fmt"Error processing "{line}" of "{pkg}/{msg}": "{err}"",)
+                raise err
+            last_element = fields[-1]
+
+        else:
+            # line contains a constant
+            var (name, value) = rest.partition($CONSTANT_SEPARATOR)
+            name = name.rstrip()
+            value = value.lstrip()
+            constants.add(newConstant(typstring, name, value))
+            last_element = constants[-1]
+
+        # add "unused" comments to the field / constant
+        last_element.annotations.mgetOrPut("comment", @[]).add current_comments
+        current_comments = @[]
+
+    var msg = newMessageSpecification(pkg_name, msg_name, fields, constants)
+    msg.annotations["comment"] = message_comments
+
+    # condense comment lines, extract special annotations
+    process_comments(msg)
+    for field in fields:
+        process_comments(field)
+    for constant in constants:
+        process_comments(constant)
+
+    return msg
 
