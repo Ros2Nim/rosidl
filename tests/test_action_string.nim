@@ -33,3 +33,22 @@ suite "actions":
     check spec.feedback.msg_name == "Foo_Feedback"
     check len(spec.feedback.fields) == 1
     check len(spec.feedback.constants) == 0
+
+  test "valid_action_string2":
+    var spec = parse_action_string(
+        "pkg", "Foo", "#comment---\n \nbool foo\n---\n#comment\n \nint8 bar\n---\nbool foo")
+    # Goal checks
+    check spec.goal.base_type.pkg_name == "pkg"
+    check spec.goal.msg_name == "Foo_Goal"
+    check len(spec.goal.fields) == 1
+    check len(spec.goal.constants) == 0
+    # Result checks
+    check spec.result.base_type.pkg_name == "pkg"
+    check spec.result.msg_name == "Foo_Result"
+    check len(spec.result.fields) == 1
+    check len(spec.result.constants) == 0
+    # Feedback checks
+    check len(spec.feedback.fields) == 1
+    check spec.feedback.fields[0].typ.typ == "bool"
+    check spec.feedback.fields[0].name == "foo"
+    check len(spec.feedback.constants) == 0
