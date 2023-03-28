@@ -596,7 +596,7 @@ proc find_matching_end_quote(str, quote: string): int =
     return -1
 
 
-proc parse_string_array_value_string(element_string: string, expected_size: int): seq[string] =
+proc parse_string_array_value_string*(element_string: string, expected_size: int): seq[string] =
     # Walks the string, if start with quote (" or ") find next unescapted quote,
     # returns a list of string elements
     var value_strings: seq[string]
@@ -635,7 +635,7 @@ proc parse_string_array_value_string(element_string: string, expected_size: int)
             element_string = element_string[1..^1]
     return value_strings
 
-proc extract_file_level_comments(message_string: string): (seq[string], seq[string]) =
+proc extract_file_level_comments*(message_string: string): (seq[string], seq[string]) =
     var lines = message_string.splitlines()
     var index = 0
     for idx, line in lines:
@@ -822,7 +822,7 @@ type
         result*: MessageSpecification
         feedback*: MessageSpecification
 
-proc newActionSpecification(
+proc newActionSpecification*(
         pkg_name, action_name: string,
         goal, results, feedback: MessageSpecification
 ): ActionSpecification =
@@ -832,7 +832,7 @@ proc newActionSpecification(
     result.result = results
     result.feedback = feedback
 
-proc parse_action_string(pkg_name, action_name, action_string: string): ActionSpecification =
+proc parse_action_string*(pkg_name, action_name, action_string: string): ActionSpecification =
     var lines = action_string.splitlines()
     # var separator_indices = [
     #     index for index, line in enumerate(lines) if line == ACTION_REQUEST_RESPONSE_SEPARATOR]
