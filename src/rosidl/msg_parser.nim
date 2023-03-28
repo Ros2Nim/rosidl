@@ -397,7 +397,7 @@ proc parse_primitive_value_string*(typ: Type, value_string: string): MsgVal =
         let is_unsigned = primitive_type.startswith("u")
 
         if is_unsigned:
-            let val = parseUInt(primitive_type)
+            let val = parseUInt(value_string)
             result = 
                 case primitive_type:
                 of "uint8": MUInt(uint8 val)
@@ -406,8 +406,9 @@ proc parse_primitive_value_string*(typ: Type, value_string: string): MsgVal =
                 of "uint64": MUInt(uint64 val)
                 else:
                     raise newException(ValueError, "unknown type")
+            return
         else:
-            let val = parseInt(primitive_type)
+            let val = parseInt(value_string)
             result = 
                 case primitive_type:
                 of "int8": MInt(int8 val)
@@ -416,6 +417,7 @@ proc parse_primitive_value_string*(typ: Type, value_string: string): MsgVal =
                 of "int64": MInt(int64 val)
                 else:
                     raise newException(ValueError, "unknown type")
+            return
 
     if primitive_type in ["string", "wstring"]:
         # remove outer quotes to allow leading / trailing spaces in the string
