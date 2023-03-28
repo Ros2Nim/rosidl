@@ -657,7 +657,7 @@ proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageS
     let
         (message_comments, lines) = extract_file_level_comments(message_string)
     
-    echo "(message_comments, lines) ", (message_comments, lines)
+    # echo "(message_comments, lines) ", (message_comments, lines)
 
     var
         current_comments: seq[string]
@@ -669,11 +669,11 @@ proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageS
         # ignore empty lines
         if line == "":
             # file-level comments stop at the first empty line
-            echo "found empty line, end file level comments"
+            # echo "found empty line, end file level comments"
             continue
 
         var index = line.find(COMMENT_DELIMITER)
-        echo "INDEX: ", index
+        # echo "INDEX: ", index
 
         # comment
         var comment = string.none
@@ -681,22 +681,22 @@ proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageS
             comment = some line[index..^1].lstrip({COMMENT_DELIMITER})
             line = line[0..<index]
 
-        echo "LINE COMMENT: ", comment
+        # echo "LINE COMMENT: ", comment
         if comment.isSome:
-            echo "found line comment: ", repr line
+            # echo "found line comment: ", repr line
             if line != "" and line.strip() == "":
                 # indented comment line
                 # append to previous field / constant if available or ignore
                 if not last_element.isNil:
                     last_element.annotations.mgetOrPut("comment", @[]).add(comment.get)
-                echo "skip comment indented..."
+                # echo "skip comment indented..."
                 continue
             # collect "unused" comments
             current_comments.add(comment.get)
 
             line = line.strip(leading=false, trailing=true)
             if line == "":
-                echo "ignore empty line"
+                # echo "ignore empty line"
                 continue
 
         let (typstring, mrest) = line.partition(" ")
@@ -708,7 +708,7 @@ proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageS
         index = rest.find(CONSTANT_SEPARATOR)
         if index == -1:
             # line contains a field
-            echo "found field"
+            # echo "found field"
             let (field_name, mdefault_value_string) = rest.partition(" ")
             let default_value_string = mdefault_value_string.lstrip()
             try:
@@ -729,7 +729,7 @@ proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageS
             last_element = constants[^1]
 
         # add "unused" comments to the field / constant
-        echo "CURRENT_COMMENTS: ", current_comments
+        # echo "CURRENT_COMMENTS: ", current_comments
         last_element.annotations.mgetOrPut("comment", @[]).add current_comments
         current_comments = @[]
 
