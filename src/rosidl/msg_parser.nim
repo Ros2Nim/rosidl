@@ -218,8 +218,8 @@ proc `$`*(self: Field): string =
             result.add " %s" % [$self.default_value.get]
 
 proc parse_primitive_value_string*(typ: Type, value_string: string): MsgVal
-proc parse_value_string(typ: Type, value_string: string): MsgVal
-proc parse_string_array_value_string(element_string: string, expected_size: int): seq[string]
+proc parse_value_string*(typ: Type, value_string: string): MsgVal
+proc parse_string_array_value_string*(element_string: string, expected_size: int): seq[string]
 
 proc setupBaseType*(result: var BaseType, typstring: string, context_package_name="") =
     assert not result.isNil
@@ -526,7 +526,7 @@ proc process_comments(instance: BaseField or MessageSpecification) =
             instance.annotations["comment"] = dedent(text).split("\n")
 
 
-proc parse_value_string(typ: Type, value_string: string): MsgVal =
+proc parse_value_string*(typ: Type, value_string: string): MsgVal =
     if typ.is_primitive_type() and not typ.is_array:
         return parse_primitive_value_string(typ, value_string)
 

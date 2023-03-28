@@ -9,3 +9,4 @@ src/rosidl_runtime_c/service_type_support_struct
 /tests/test_parse_msg_string
 /tests/test_typ_intro_c
 /tests/test_rosidl_runtime_c
+/tests/test_action_string
