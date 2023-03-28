@@ -78,6 +78,7 @@ suite "message comments":
     check len(msg_spec.annotations) == 1
     check "comment" in msg_spec.annotations
     check len(msg_spec.annotations["comment"]) == 3
+    echo "COMMENT: ", msg_spec.annotations["comment"]
     check msg_spec.annotations["comment"][0] == "comment 1"
     check msg_spec.annotations["comment"][1] == ""
     check msg_spec.annotations["comment"][2] == "comment 2"
@@ -97,8 +98,9 @@ suite "message comments":
     check len(msg_spec.fields) == 1
     check len(msg_spec.fields[0].annotations) == 1
     check "comment" in msg_spec.fields[0].annotations
+    echo "COMMENT: ", msg_spec.annotations["comment"]
+    echo "FIELDS: ", msg_spec.fields
     check len(msg_spec.fields[0].annotations["comment"]) == 1
-    echo "comment: ", msg_spec.fields[0].annotations["comment"]
     check msg_spec.fields[0].annotations["comment"][0] == "comment 2"
 
   test "file-level comment, trailing and indented field-level comment":

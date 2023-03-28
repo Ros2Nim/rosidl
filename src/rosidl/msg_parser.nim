@@ -494,6 +494,8 @@ proc process_comments(instance: BaseField or MessageSpecification) =
             comment = lines.join("\n")
             matches = comment.findall(re"(\s*\[([^,\]]+)\])")
         
+        echo "MATCHES: ", matches
+        
         if len(matches) == 1:
             ## checkme
             instance.annotations["unit"].add matches[0].groupFirstCapture(0, comment)
@@ -655,41 +657,46 @@ proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageS
     let
         (message_comments, lines) = extract_file_level_comments(message_string)
     
+    echo "(message_comments, lines) ", (message_comments, lines)
+
     var
         current_comments: seq[string]
         last_element: BaseField
 
     for line in lines:
-        var line = line.strip(leading=true, trailing=false, Whitespace)
+        var line = line.strip(leading=false, trailing=true, Whitespace)
 
         # ignore empty lines
         if line == "":
             # file-level comments stop at the first empty line
-            echo "ignore empty line"
+            echo "found empty line, end file level comments"
             continue
 
         var index = line.find(COMMENT_DELIMITER)
+        echo "INDEX: ", index
 
         # comment
-        var comment = ""
+        var comment = string.none
         if index >= 0:
-            comment = line[index..^1].lstrip({COMMENT_DELIMITER})
+            comment = some line[index..^1].lstrip({COMMENT_DELIMITER})
             line = line[0..<index]
 
-        if comment != "":
-            if line.strip() == "":
+        echo "LINE COMMENT: ", comment
+        if comment.isSome:
+            echo "found line comment: ", repr line
+            if line != "" and line.strip() == "":
                 # indented comment line
                 # append to previous field / constant if available or ignore
                 if not last_element.isNil:
-                    last_element.annotations.mgetOrPut("comment", @[]).add(comment)
-                # echo "skip comment indented..."
+                    last_element.annotations.mgetOrPut("comment", @[]).add(comment.get)
+                echo "skip comment indented..."
                 continue
             # collect "unused" comments
-            current_comments.add(comment)
+            current_comments.add(comment.get)
 
             line = line.strip(leading=false, trailing=true)
             if line == "":
-                # echo "ignore empty line"
+                echo "ignore empty line"
                 continue
 
         let (typstring, mrest) = line.partition(" ")
@@ -701,6 +708,7 @@ proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageS
         index = rest.find(CONSTANT_SEPARATOR)
         if index == -1:
             # line contains a field
+            echo "found field"
             let (field_name, mdefault_value_string) = rest.partition(" ")
             let default_value_string = mdefault_value_string.lstrip()
             try:
@@ -721,6 +729,7 @@ proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageS
             last_element = constants[^1]
 
         # add "unused" comments to the field / constant
+        echo "CURRENT_COMMENTS: ", current_comments
         last_element.annotations.mgetOrPut("comment", @[]).add current_comments
         current_comments = @[]
 
