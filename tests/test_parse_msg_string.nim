@@ -151,4 +151,5 @@ suite "message comments":
     check msg_spec.fields[0].annotations["comment"][0] == "comment"
 
     check "unit" in msg_spec.fields[0].annotations
+    echo "UNIT: ", msg_spec.fields[0].annotations["unit"]
     check msg_spec.fields[0].annotations["unit"][0] == "unit"

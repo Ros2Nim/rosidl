@@ -498,7 +498,9 @@ proc process_comments(instance: BaseField or MessageSpecification) =
         
         if len(matches) == 1:
             ## checkme
-            instance.annotations["unit"].add matches[0].groupFirstCapture(0, comment)
+            echo "MATCH[0]: ", matches[0]
+            let comment = matches[0].groupFirstCapture(1, comment)
+            instance.annotations.mgetOrPut("unit", @[]).add(comment)
             # remove the unit from the comment
             for i, line in lines:
                 lines[i] = line.replace(matches[0].groupFirstCapture(0, line), "")
