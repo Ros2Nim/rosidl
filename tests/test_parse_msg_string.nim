@@ -71,7 +71,8 @@ suite "msg parse":
     expect(ValueError):
         discard parse_message_string("pkg", "Foo", "bool FOO=1\nbool FOO=1")
   
-  test "message comments":
+suite "message comments":
+  test "basic":
     # multi line file-level comment
     var msg_spec = parse_message_string("pkg", "Foo", "# comment 1\n#\n# comment 2\nbool value")
     check len(msg_spec.annotations) == 1
@@ -80,3 +81,72 @@ suite "msg parse":
     check msg_spec.annotations["comment"][0] == "comment 1"
     check msg_spec.annotations["comment"][1] == ""
     check msg_spec.annotations["comment"][2] == "comment 2"
+
+    check len(msg_spec.fields) == 1
+    check len(msg_spec.fields[0].annotations) == 1
+    check "comment" in msg_spec.fields[0].annotations
+    check len(msg_spec.fields[0].annotations["comment"]) == 0
+
+  test "file-level comment separated from field-level comment":
+    var msg_spec = parse_message_string("pkg", "Foo", "# comment 1\n\n# comment 2\nbool value")
+    check len(msg_spec.annotations) == 1
+    check "comment" in msg_spec.annotations
+    check len(msg_spec.annotations["comment"]) == 1
+    check msg_spec.annotations["comment"] == ["comment 1"]
+
+    check len(msg_spec.fields) == 1
+    check len(msg_spec.fields[0].annotations) == 1
+    check "comment" in msg_spec.fields[0].annotations
+    check len(msg_spec.fields[0].annotations["comment"]) == 1
+    echo "comment: ", msg_spec.fields[0].annotations["comment"]
+    check msg_spec.fields[0].annotations["comment"][0] == "comment 2"
+
+  test "file-level comment, trailing and indented field-level comment":
+    var msg_spec = parse_message_string(
+        "pkg", "Foo", "# comment 1\nbool value  # comment 2\n   # comment 3\nbool value2")
+    check len(msg_spec.annotations) == 1
+    check "comment" in msg_spec.annotations
+    check len(msg_spec.annotations["comment"]) == 1
+    check msg_spec.annotations["comment"] == ["comment 1"]
+
+    check len(msg_spec.fields) == 2
+    check len(msg_spec.fields[0].annotations) == 1
+    check "comment" in msg_spec.fields[0].annotations
+    check len(msg_spec.fields[0].annotations["comment"]) == 2
+    check msg_spec.fields[0].annotations["comment"][0] == "comment 2"
+    check msg_spec.fields[0].annotations["comment"][1] == "comment 3"
+
+    check len(msg_spec.fields[1].annotations) == 1
+    check "comment" in msg_spec.fields[1].annotations
+    check len(msg_spec.fields[1].annotations["comment"]) == 0
+
+  test "trailing field-level comment, next field-level comment":
+    var msg_spec = parse_message_string(
+        "pkg", "Foo", "bool value  # comment 2\n# comment 3\nbool value2")
+    check len(msg_spec.annotations) == 1
+    check "comment" in msg_spec.annotations
+    check len(msg_spec.annotations["comment"]) == 0
+
+    check len(msg_spec.fields) == 2
+    check len(msg_spec.fields[0].annotations) == 1
+    check "comment" in msg_spec.fields[0].annotations
+    check len(msg_spec.fields[0].annotations["comment"]) == 1
+    check msg_spec.fields[0].annotations["comment"][0] == "comment 2"
+
+    check len(msg_spec.fields[1].annotations) == 1
+    check "comment" in msg_spec.fields[1].annotations
+    check len(msg_spec.fields[1].annotations["comment"]) == 1
+    check msg_spec.fields[1].annotations["comment"][0] == "comment 3"
+
+  test "field-level comment with a unit":
+    var msg_spec = parse_message_string(
+        "pkg", "Foo", "bool value  # comment [unit]")
+
+    check len(msg_spec.fields) == 1
+    check len(msg_spec.fields[0].annotations) == 2
+    check "comment" in msg_spec.fields[0].annotations
+    check len(msg_spec.fields[0].annotations["comment"]) == 1
+    check msg_spec.fields[0].annotations["comment"][0] == "comment"
+
+    check "unit" in msg_spec.fields[0].annotations
+    check msg_spec.fields[0].annotations["unit"][0] == "unit"
