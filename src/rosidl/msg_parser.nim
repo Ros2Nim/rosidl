@@ -771,3 +771,45 @@ proc `$`*(self: ServiceSpecification): string =
     result.add("\n---\n")
     result.add($(self.response))
 
+proc parse_service_string*(pkg_name, srv_name, message_string: string): ServiceSpecification =
+    var lines = message_string.splitlines()
+    # var separator_indices = [
+    #     index for index, line in enumerate(lines) if line == SERVICE_REQUEST_RESPONSE_SEPARATOR]
+    var separator_indices: seq[int]
+    for index, line in lines:
+        if line == SERVICE_REQUEST_RESPONSE_SEPARATOR:
+            separator_indices.add index
+
+    if separator_indices.len == 0:
+        raise newException(InvalidServiceSpecification,
+            "Could not find separator '%s' between request and response" %
+            SERVICE_REQUEST_RESPONSE_SEPARATOR)
+
+    if len(separator_indices) != 1:
+        raise newException(InvalidServiceSpecification,
+            "Could not find unique separator '%s' between request and response" %
+            SERVICE_REQUEST_RESPONSE_SEPARATOR)
+
+    var request_message_string = join(lines[0..<separator_indices[0]], "\n")
+    var request_message = parse_message_string(
+        pkg_name, srv_name & SERVICE_REQUEST_MESSAGE_SUFFIX, request_message_string)
+
+    var response_message_string = join(lines[separator_indices[0] + 1 .. ^1], "\n")
+    var response_message = parse_message_string(
+        pkg_name, srv_name & SERVICE_RESPONSE_MESSAGE_SUFFIX, response_message_string)
+
+    result = ServiceSpecification(
+                pkg_name: pkg_name,
+                srv_name: srv_name,
+                request: request_message,
+                response: response_message)
+
+import os
+
+proc parse_service_file*(pkg_name, interface_filename: string): ServiceSpecification =
+    var basename = lastPathPart(interface_filename)
+    var srv_name = splitPath(basename).tail
+
+    var h = open(interface_filename)
+    return parse_service_string( pkg_name, srv_name, h.readAll())
+
