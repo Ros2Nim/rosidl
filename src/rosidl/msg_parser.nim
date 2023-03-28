@@ -1,6 +1,6 @@
 import std / [strutils, strformat, sequtils, tables, options]
 import patty, regex
-export options
+export options, tables
 
 const PACKAGE_NAME_MESSAGE_TYPE_SEPARATOR* = "/"
 const COMMENT_DELIMITER* = '#'

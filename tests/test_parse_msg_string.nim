@@ -70,3 +70,13 @@ suite "msg parse":
         discard parse_message_string("pkg", "Foo", "bool foo=1")
     expect(ValueError):
         discard parse_message_string("pkg", "Foo", "bool FOO=1\nbool FOO=1")
+  
+  test "message comments":
+    # multi line file-level comment
+    var msg_spec = parse_message_string("pkg", "Foo", "# comment 1\n#\n# comment 2\nbool value")
+    check len(msg_spec.annotations) == 1
+    check "comment" in msg_spec.annotations
+    check len(msg_spec.annotations["comment"]) == 3
+    check msg_spec.annotations["comment"][0] == "comment 1"
+    check msg_spec.annotations["comment"][1] == ""
+    check msg_spec.annotations["comment"][2] == "comment 2"
