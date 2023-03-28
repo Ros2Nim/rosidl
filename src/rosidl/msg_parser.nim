@@ -747,3 +747,27 @@ proc parse_message_string*(pkg_name, msg_name, message_string: string): MessageS
 
     return msg
 
+type
+    ServiceSpecification* = ref object
+        pkg_name*: string
+        srv_name*: string
+        request*: MessageSpecification
+        response*: MessageSpecification
+
+proc newServiceSpecification*(
+        pkg_name, srv_name: string,
+        request, response: MessageSpecification
+): ServiceSpecification =
+    new result
+    result.pkg_name = pkg_name
+    result.srv_name = srv_name
+    result.request = request
+    result.response = response
+
+proc `$`*(self: ServiceSpecification): string =
+    ## """Output an equivalent .srv IDL string."""
+    result = ["# ", $(self.pkg_name), "/", $(self.srv_name), "\n"].join("")
+    result.add($(self.request))
+    result.add("\n---\n")
+    result.add($(self.response))
+
