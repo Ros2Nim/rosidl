@@ -52,3 +52,11 @@ suite "actions":
     check spec.feedback.fields[0].typ.typ == "bool"
     check spec.feedback.fields[0].name == "foo"
     check len(spec.feedback.constants) == 0
+
+  test "invalid_action_specification":
+    expect(InvalidActionSpecification):
+        discard parse_action_string("pkg", "Foo", "")
+
+    # too few action separators (---)
+    expect(InvalidActionSpecification):
+        discard parse_action_string("pkg", "Foo", "bool foo\n---\nint8 bar")
