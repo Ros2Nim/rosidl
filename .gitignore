@@ -7,3 +7,5 @@ src/rosidl_runtime_c/service_type_support_struct
 /tests/test_primitives
 /tests/test_msg_basics
 /tests/test_parse_msg_string
+/tests/test_typ_intro_c
+/tests/test_rosidl_runtime_c
