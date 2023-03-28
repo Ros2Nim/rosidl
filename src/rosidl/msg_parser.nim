@@ -813,3 +813,58 @@ proc parse_service_file*(pkg_name, interface_filename: string): ServiceSpecifica
     var h = open(interface_filename)
     return parse_service_string( pkg_name, srv_name, h.readAll())
 
+
+type
+    ActionSpecification* = ref object
+        pkg_name*: string
+        action_name*: string
+        goal*: MessageSpecification
+        result*: MessageSpecification
+        feedback*: MessageSpecification
+
+proc newActionSpecification(
+        pkg_name, action_name: string,
+        goal, results, feedback: MessageSpecification
+): ActionSpecification =
+    result.pkg_name = pkg_name
+    result.action_name = action_name
+    result.goal = goal
+    result.result = results
+    result.feedback = feedback
+
+proc parse_action_string(pkg_name, action_name, action_string: string): ActionSpecification =
+    var lines = action_string.splitlines()
+    # var separator_indices = [
+    #     index for index, line in enumerate(lines) if line == ACTION_REQUEST_RESPONSE_SEPARATOR]
+    var separator_indices: seq[int]
+    for index, line in lines:
+        if line == ACTION_REQUEST_RESPONSE_SEPARATOR:
+            separator_indices.add index
+    
+    if len(separator_indices) != 2:
+        raise newException(InvalidActionSpecification,
+            "Number of '%s' separators nonconformant with action definition" %
+            ACTION_REQUEST_RESPONSE_SEPARATOR)
+
+    var goal_string = join(lines[0..<separator_indices[0]], "\n")
+    var result_string = join(lines[separator_indices[0] + 1 ..< separator_indices[1]], "\n")
+    var feedback_string = join(lines[separator_indices[1] + 1 .. ^1], "\n")
+
+    var goal_message = parse_message_string(
+        pkg_name, action_name & ACTION_GOAL_SUFFIX, goal_string)
+    var result_message = parse_message_string(
+        pkg_name, action_name & ACTION_RESULT_SUFFIX, result_string)
+    var feedback_message = parse_message_string(
+        pkg_name, action_name & ACTION_FEEDBACK_SUFFIX, feedback_string)
+    # ---------------------------------------------------------------------------------------------
+    return ActionSpecification(pkg_name: pkg_name,
+                                action_name: action_name,
+                                goal: goal_message,
+                                result: result_message,
+                                feedback: feedback_message)
+
+proc parse_action_file*(pkg_name, interface_filename: string): ActionSpecification =
+    var basename = lastPathPart(interface_filename)
+    var action_name = splitPath(basename).tail
+    var h = open(interface_filename)
+    return parse_action_string(pkg_name, action_name, h.readAll())
