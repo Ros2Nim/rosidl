@@ -494,11 +494,11 @@ proc process_comments(instance: BaseField or MessageSpecification) =
             comment = lines.join("\n")
             matches = comment.findall(re"(\s*\[([^,\]]+)\])")
         
-        echo "MATCHES: ", matches
+        # echo "MATCHES: ", matches
         
         if len(matches) == 1:
             ## checkme
-            echo "MATCH[0]: ", matches[0]
+            # echo "MATCH[0]: ", matches[0]
             let comment = matches[0].groupFirstCapture(1, comment)
             instance.annotations.mgetOrPut("unit", @[]).add(comment)
             # remove the unit from the comment
