@@ -75,7 +75,8 @@ proc is_valid_message_name*(name: string): bool =
     ]
     for suffix in suffixes:
         if name.endswith(suffix):
-            name = name[0..^len(suffix)]
+            name = name[0 ..< ^len(suffix)]
+    # echo "IS_VALID_MESSAGE_NAME: ", name
     var m: RegexMatch
     if name.match(VALID_MESSAGE_NAME_PATTERN, m):
         return m.groupFirstCapture(0, name) == name
