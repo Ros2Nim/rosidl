@@ -31,8 +31,12 @@ macro rosMsgFile*(mpath: typed): untyped =
   echo "ROS MSG: "
   echo repr msg
   echo ""
+  echo "msg_name: ", msg.msg_name
+  echo "pkg_name: ", msg.base_type.pkg_name
 
   for field in msg.fields:
-    echo "field:name: ", field.name
-    echo "field:typ: ", field.typ
-    echo "field:defVal: ", field.default_value
+    echo "  field:name: ", field.name
+    echo "  field:typ: ", field.typ
+    echo "  field:defVal: ", field.default_value
+  
+  echo ""
