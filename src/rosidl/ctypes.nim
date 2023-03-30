@@ -59,7 +59,7 @@ macro rosMsgFile*(mpath: typed): untyped =
   echo "  "
   result[0][^1][^1] = recList
 
-  echo "result:treeRepr:"
-  echo result.treeRepr
+  # echo "result:treeRepr:"
+  # echo result.treeRepr
   echo "result:repr:"
   echo result.repr
