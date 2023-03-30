@@ -262,15 +262,6 @@ proc parse_service_string*(pkg_name, srv_name, message_string: string): ServiceS
                 request: request_message,
                 response: response_message)
 
-import os
-
-proc parse_service_file*(pkg_name, interface_filename: string): ServiceSpecification =
-    var basename = lastPathPart(interface_filename)
-    var srv_name = splitPath(basename).tail
-
-    var h = open(interface_filename)
-    return parse_service_string( pkg_name, srv_name, h.readAll())
-
 
 type
     ActionSpecification* = ref object
@@ -321,8 +312,30 @@ proc parse_action_string*(pkg_name, action_name, action_string: string): ActionS
                                 result: result_message,
                                 feedback: feedback_message)
 
+import os
+
+proc parse_message_file*(message_filename: string, pkg_name = ""): MessageSpecification =
+    var msg_name = splitFile(message_filename).name
+    var pkg_name = pkg_name
+    if pkg_name == "":
+        pkg_name = message_filename.splitFile.dir.parentDir.lastPathPart()
+
+    var h = open(message_filename)
+    return parse_message_string(pkg_name, msg_name, h.readAll())
+
+proc parse_service_file*(pkg_name, interface_filename: string): ServiceSpecification =
+    var srv_name = splitFile(interface_filename).name
+    var pkg_name = pkg_name
+    if pkg_name == "":
+        pkg_name = splitFile(interface_filename).dir.lastPathPart()
+
+    var h = open(interface_filename)
+    return parse_service_string( pkg_name, srv_name, h.readAll())
+
 proc parse_action_file*(pkg_name, interface_filename: string): ActionSpecification =
-    var basename = lastPathPart(interface_filename)
-    var action_name = splitPath(basename).tail
+    var action_name  = splitFile(interface_filename).name
+    var pkg_name = pkg_name
+    if pkg_name == "":
+        pkg_name = splitFile(interface_filename).dir.lastPathPart()
     var h = open(interface_filename)
     return parse_action_string(pkg_name, action_name, h.readAll())

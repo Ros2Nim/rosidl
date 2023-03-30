@@ -44,7 +44,7 @@ const PRIMITIVE_TYPES* = [
     "time",  # for compatibility only
 ]
 
-let 
+const 
     VALID_PACKAGE_NAME_PATTERN: Regex = re"^([a-z][a-z0-9_]*)$"
 
     VALID_FIELD_NAME_PATTERN = VALID_PACKAGE_NAME_PATTERN

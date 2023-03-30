@@ -11,3 +11,4 @@ src/rosidl_runtime_c/service_type_support_struct
 /tests/test_rosidl_runtime_c
 /tests/test_action_string
 /tests/test_parse_service_string
+/tests/test_ctypes
