@@ -1,4 +1,4 @@
-import std / [strutils, macros]
+import std / [strutils, sequtils, macros]
 
 import msg_parser
 
@@ -33,10 +33,20 @@ macro rosMsgFile*(mpath: typed): untyped =
   echo ""
   echo "msg_name: ", msg.msg_name
   echo "pkg_name: ", msg.base_type.pkg_name
+  let pkgNim = msg.base_type.pkg_name.split("_").mapIt(it.capitalizeAscii()).join("")
+  let msgNim = msg.msg_name.split("_").mapIt(it.capitalizeAscii()).join("")
+  let MsgNameN = ident(pkgNim & msgNim)
+  let MsgNameC = "$1__msg__$2" % [msg.base_type.pkg_name, msg.msg_name]
 
   for field in msg.fields:
     echo "  field:name: ", field.name
     echo "  field:typ: ", field.typ
     echo "  field:defVal: ", field.default_value
-  
   echo ""
+
+  result = quote do:
+    type
+      `MsgNameN`* {.importc: `MsgNameC`.} = object
+  
+  echo "result:"
+  echo result.repr

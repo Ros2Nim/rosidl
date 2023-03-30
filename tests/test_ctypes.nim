@@ -7,9 +7,12 @@
 
 import unittest
 import strutils
+import macros
 
 import rosidl/msg_parser
 import rosidl/ctypes
+
+rosMsgFile("../deps/local/std_msgs/std_msgs/msg/Bool.msg")
 
 suite "message ctypes":
 
@@ -22,4 +25,5 @@ suite "message ctypes":
 
   test "test bool message":
     echo "test"
-    rosMsgFile("../deps/local/std_msgs/std_msgs/msg/Bool.msg")
+    echo "bool: ", typeof StdMsgsBool
+    echo "fields: "
