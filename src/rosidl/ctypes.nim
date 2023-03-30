@@ -44,12 +44,12 @@ macro rosMsgFile*(mpath: typed): untyped =
   result = quote do:
     type
       `MsgNameN`* {.importc: `MsgNameC`, header: `MsgHdr`.} = object
-        field: int
+        field*: int
   
   var recList = nnkRecList.newTree()
   for field in msg.fields:
     recList.add nnkIdentDefs.newTree(
-      ident(field.name),
+      nnkPostfix.newTree(ident("*"), ident(field.name)),
       ident(field.typ.typ),
       newEmptyNode(),
     )
@@ -59,8 +59,7 @@ macro rosMsgFile*(mpath: typed): untyped =
   echo "  "
   result[0][^1][^1] = recList
 
-  echo "result:repr:"
-  echo result.repr
   echo "result:treeRepr:"
   echo result.treeRepr
-  echo "result:treeRepr:object:"
+  echo "result:repr:"
+  echo result.repr

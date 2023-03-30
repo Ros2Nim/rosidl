@@ -27,7 +27,6 @@ suite "message ctypes":
     echo msg
 
   test "test bool message":
-    echo "test"
     echo "bool: ", typeof StdMsgsBool
     var x: StdMsgsBool
     echo "StdMsgsBool: ", x
