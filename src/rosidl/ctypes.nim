@@ -29,15 +29,14 @@ proc parse_message_static*(message_filename: string, pkg_name = ""): MessageSpec
 macro rosMsgFile*(mpath: typed): untyped =
   echo "MsgHdr: ", mpath.strVal
   let msg = parse_message_static(mpath.strVal)
-  echo "ROS MSG: "
-  echo repr msg
+  # echo "ROS MSG: "
+  # echo repr msg
   echo ""
   echo "msg_name: ", msg.msg_name
   echo "pkg_name: ", msg.base_type.pkg_name
   let pkgNim = msg.base_type.pkg_name.split("_").mapIt(it.capitalizeAscii()).join("")
   let msgNim = msg.msg_name.split("_").mapIt(it.capitalizeAscii()).join("")
   let MsgNameN = ident(pkgNim & msgNim)
-  # let MsgHdr = "../deps/local/std_msgs/std_msgs/msg/detail/bool__struct.h"
   let MsgHdr = "$1/msg/detail/$2__struct.h" % [msg.base_type.pkg_name, msg.msg_name.toLower()]
   let MsgNameC = "$1__msg__$2" % [msg.base_type.pkg_name, msg.msg_name]
 
