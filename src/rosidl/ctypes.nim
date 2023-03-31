@@ -27,13 +27,13 @@ proc parse_message_static*(message_filename: string, pkg_name = ""): MessageSpec
   result = parse_message_string(pkg_name, msg_name, h)
 
 macro rosMsgFile*(mpath: typed): untyped =
-  echo "MsgHdr: ", mpath.strVal
+  # echo "MsgHdr: ", mpath.strVal
   let msg = parse_message_static(mpath.strVal)
   # echo "ROS MSG: "
   # echo repr msg
-  echo ""
-  echo "msg_name: ", msg.msg_name
-  echo "pkg_name: ", msg.base_type.pkg_name
+  # echo ""
+  # echo "msg_name: ", msg.msg_name
+  # echo "pkg_name: ", msg.base_type.pkg_name
   let pkgNim = msg.base_type.pkg_name.split("_").mapIt(it.capitalizeAscii()).join("")
   let msgNim = msg.msg_name.split("_").mapIt(it.capitalizeAscii()).join("")
   let MsgHdr = "$1/msg/detail/$2__struct.h" % [msg.base_type.pkg_name, msg.msg_name.toLower()]
@@ -58,13 +58,12 @@ macro rosMsgFile*(mpath: typed): untyped =
       ident(field.typ.typ),
       newEmptyNode(),
     )
-    echo "  field:name: ", field.name
-    echo "  field:typ: ", field.typ
-    echo "  field:defVal: ", field.default_value
-  echo "  "
+    # echo "  field:name: ", field.name
+    # echo "  field:typ: ", field.typ
+    # echo "  field:defVal: ", field.default_value
   result[0][^1][^1] = recList
 
   # echo "result:treeRepr:"
-  # echo result.treeRepr
-  echo "result:repr:"
-  echo result.repr
+  # echo result[0][^1].treeRepr
+  # echo "result:repr:"
+  # echo result.repr
