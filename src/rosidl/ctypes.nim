@@ -36,14 +36,20 @@ macro rosMsgFile*(mpath: typed): untyped =
   echo "pkg_name: ", msg.base_type.pkg_name
   let pkgNim = msg.base_type.pkg_name.split("_").mapIt(it.capitalizeAscii()).join("")
   let msgNim = msg.msg_name.split("_").mapIt(it.capitalizeAscii()).join("")
-  let MsgNameN = ident(pkgNim & msgNim)
   let MsgHdr = "$1/msg/detail/$2__struct.h" % [msg.base_type.pkg_name, msg.msg_name.toLower()]
+  let MsgNameN = ident(pkgNim & msgNim)
   let MsgNameC = "$1__msg__$2" % [msg.base_type.pkg_name, msg.msg_name]
+  let MsgNameSN = ident(pkgNim & msgNim & "Sequence")
+  let MsgNameSC = "$1__msg__$2__Sequence" % [msg.base_type.pkg_name, msg.msg_name]
 
   result = quote do:
     type
       `MsgNameN`* {.importc: `MsgNameC`, header: `MsgHdr`.} = object
         field*: int
+      `MsgNameSN`* {.importc: `MsgNameSC`, header: `MsgHdr`.} = object
+        data*: UncheckedArray[`MsgNameN`]
+        size*: csize_t
+        capacity*: csize_t
   
   var recList = nnkRecList.newTree()
   for field in msg.fields:
