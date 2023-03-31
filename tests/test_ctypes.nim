@@ -12,8 +12,7 @@ import macros
 import rosidl/msg_parser
 import rosidl/ctypes
 
-{.passC: "-I../deps/local/std_msgs".}
-{.passC: "-Ideps/local/std_msgs".}
+{.passC: "-I../deps/local/std_msgs -Ideps/local/std_msgs".}
 
 rosMsgFile("../deps/local/std_msgs/std_msgs/msg/Bool.msg")
 
