@@ -1,4 +1,4 @@
-import std / [strutils, sequtils, macros]
+import std / [strutils, sequtils, macros, genasts]
 
 import msg_parser
 
@@ -61,10 +61,13 @@ macro rosMsgFile*(mpath: typed): untyped =
     # echo "  field:name: ", field.name
     # echo "  field:typ: ", field.typ
     # echo "  field:defVal: ", field.default_value
+  let sprfx = pkgNim[0].toLowerAscii & pkgNim[1..^1] & msgNim & "Sequence"
   tres[0][^1][^1] = recList
-
-  # echo "result:treeRepr:"
-  # echo result[0][^1].treeRepr
   result = nnkStmtList.newTree(tres)
+  let pc = genAst(init=ident(sprfx&"init"), ret=MsgNameN):
+    proc init*(): ret {.importc: "", header: "".}
+  echo "result:pc:"
+  echo pc.repr
+
   echo "result:repr:"
   echo result.repr
