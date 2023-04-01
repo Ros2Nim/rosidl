@@ -42,7 +42,7 @@ macro rosMsgFile*(mpath: typed): untyped =
   let MsgNameSN = ident(pkgNim & msgNim & "Sequence")
   let MsgNameSC = "$1__msg__$2__Sequence" % [msg.base_type.pkg_name, msg.msg_name]
 
-  result = quote do:
+  var tres = quote do:
     type
       `MsgNameN`* {.importc: `MsgNameC`, header: `MsgHdr`.} = object
         field*: int
@@ -61,9 +61,10 @@ macro rosMsgFile*(mpath: typed): untyped =
     # echo "  field:name: ", field.name
     # echo "  field:typ: ", field.typ
     # echo "  field:defVal: ", field.default_value
-  result[0][^1][^1] = recList
+  tres[0][^1][^1] = recList
 
   # echo "result:treeRepr:"
   # echo result[0][^1].treeRepr
-  # echo "result:repr:"
-  # echo result.repr
+  result = nnkStmtList.newTree(tres)
+  echo "result:repr:"
+  echo result.repr

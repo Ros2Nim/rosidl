@@ -22,6 +22,7 @@ suite "message ctypes":
     echo "test"
     let mpath = "deps/local/std_msgs/std_msgs/msg/Bool.msg"
     let msg = parse_message_file(mpath)
+
     echo "MSG: "
     echo msg
 
