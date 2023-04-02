@@ -14,7 +14,7 @@ import rosidl/ctypes
 
 {.passC: "-I../deps/local/std_msgs -Ideps/local/std_msgs".}
 
-rosMsgFile("../deps/local/std_msgs/std_msgs/msg/Bool.msg")
+importcRosMsgFile("../deps/local/std_msgs/std_msgs/msg/Bool.msg")
 
 suite "message ctypes":
 

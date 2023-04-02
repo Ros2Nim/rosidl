@@ -26,7 +26,7 @@ proc parse_message_static*(message_filename: string, pkg_name = ""): MessageSpec
   var h = staticRead(message_filename)
   result = parse_message_string(pkg_name, msg_name, h)
 
-macro rosMsgFile*(mpath: typed): untyped =
+macro importcRosMsgFile*(mpath: typed): untyped =
   # echo "MsgHdr: ", mpath.strVal
   let msg = parse_message_static(mpath.strVal)
   # echo "ROS MSG: "
@@ -39,6 +39,7 @@ macro rosMsgFile*(mpath: typed): untyped =
   let MsgHdr = "$1/msg/detail/$2__struct.h" % [msg.base_type.pkg_name, msg.msg_name.toLower()]
   let MsgNameN = ident(pkgNim & msgNim)
   let MsgNameC = "$1__msg__$2" % [msg.base_type.pkg_name, msg.msg_name]
+
   let MsgNameSN = ident(pkgNim & msgNim & "Sequence")
   let MsgNameSC = "$1__msg__$2__Sequence" % [msg.base_type.pkg_name, msg.msg_name]
 
@@ -58,16 +59,12 @@ macro rosMsgFile*(mpath: typed): untyped =
       ident(field.typ.typ),
       newEmptyNode(),
     )
-    # echo "  field:name: ", field.name
-    # echo "  field:typ: ", field.typ
-    # echo "  field:defVal: ", field.default_value
-  let sprfx = pkgNim[0].toLowerAscii & pkgNim[1..^1] & msgNim & "Sequence"
+    # echo "  field:name: ", field.name, "  field:typ: ", field.typ, " field:defVal: ", field.default_value
   tres[0][^1][^1] = recList
   result = nnkStmtList.newTree(tres)
-  let pc = genAst(init=ident(sprfx&"init"), ret=MsgNameN):
-    proc init*(): ret {.importc: "", header: "".}
-  echo "result:pc:"
-  echo pc.repr
 
-  echo "result:repr:"
-  echo result.repr
+  # echo "result:repr:"
+  # echo result.repr
+
+# macro rosMsgFunc*(): untyped =
+#   let FuncHdr = "$1/msg/detail/$2__functions.h" % [msg.base_type.pkg_name, msg.msg_name.toLower()]
