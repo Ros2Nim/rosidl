@@ -10,7 +10,7 @@ bin = @["rosidl"]
 
 requires "nim >= 1.6.0"
 
-requires "patty"
+requires "https://github.com/elcritch/patty.git == 0.3.5"
 requires "regex"
 requires "https://github.com/Ros2Nim/rcutils.git >= 0.2.0"
 requires "https://github.com/Ros2Nim/rosidl_runtime_c.git >= 0.3.1"

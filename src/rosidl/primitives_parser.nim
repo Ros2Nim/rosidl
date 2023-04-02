@@ -101,15 +101,17 @@ type
     UnknownMessageType* = object of InvalidSpecification
     InvalidValue* = object of Exception
 
+import macros
+
 variantp MsgVal:
-  MNone
-  MBool(bval: bool)
-  MByte(cval: byte)
-  MInt(ival: int64)
-  MUInt(uval: uint64)
-  MFloat(fval: float)
-  MString(sval: string)
-  MArray(aval: seq[MsgVal])
+    MNone
+    MBool(bval: bool)
+    MByte(cval: byte)
+    MInt(ival: int64)
+    MUInt(uval: uint64)
+    MFloat(fval: float)
+    MString(sval: string)
+    MArray(aval: seq[MsgVal])
 
 type
     BaseType* = ref object of RootObj
@@ -146,36 +148,36 @@ proc is_fixed_size_array*(self: Type): bool =
 
 proc empty*(self: MsgVal): bool = return self.kind == MsgValKind.MNone
 
-proc `==`*(x, y: BaseType): bool =
+proc `==`*(x, y: BaseType): bool {.noSideEffect.} =
     result = x.pkg_name == y.pkg_name and 
         x.typ == y.typ and
         x.string_upper_bound == y.string_upper_bound
 
-proc `==`*(x, y: Type): bool =
+proc `==`*(x, y: Type): bool {.noSideEffect.} =
     result =
         x.BaseType == y.BaseType and
         x.is_array == y.is_array  and 
         x.is_upper_bound == y.is_upper_bound and 
         x.array_size == y.array_size 
 
-proc `==`*(x, y: BaseField): bool =
+proc `==`*(x, y: BaseField): bool {.noSideEffect.} =
     result = x.annotations == y.annotations
 
-proc `==`*(x, y: Constant): bool =
+proc `==`*(x, y: Constant): bool {.noSideEffect.} =
     result =
         x.BaseField == y.BaseField and
         x.typ == y.typ and 
         x.name == y.name and
         x.value == y.value
 
-proc `==`*(x, y: Field): bool =
+proc `==`*(x, y: Field): bool {.noSideEffect.} =
     result =
         x.BaseField == y.BaseField and
         x.name == y.name and 
         x.typ == y.typ and 
         x.default_value == y.default_value 
 
-proc `$`*(self: BaseType): string =
+proc `$`*(self: BaseType): string {.noSideEffect.} =
     if self.pkg_name != "":
         return self.pkg_name & "/" & self.typ
     result = self.typ

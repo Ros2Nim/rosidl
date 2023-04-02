@@ -1,5 +1,5 @@
 import std / [strutils, strformat, sequtils, tables, options]
-import patty, regex
+import regex, patty
 export options, tables
 
 import primitives_parser
