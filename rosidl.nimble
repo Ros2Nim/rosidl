@@ -12,5 +12,6 @@ requires "nim >= 1.6.0"
 
 requires "https://github.com/elcritch/patty.git == 0.3.5"
 requires "https://github.com/Ros2Nim/rcutils.git >= 0.2.0"
+requires "https://github.com/Ros2Nim/ros_cdr.git >= 0.2.0"
 requires "regex"
 
