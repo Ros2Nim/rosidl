@@ -2,6 +2,9 @@ import std / [strutils, sequtils, macros, genasts]
 
 import msg_parser
 
+import rosidl_runtime_c/rstring
+export rstring
+
 import os
 
 type
@@ -58,15 +61,19 @@ macro importcRosMsgFile*(mpath: typed): untyped =
   
   var recList = nnkRecList.newTree()
   for field in msg.fields:
+    var ftype = field.typ.typ
+    # echo "FTYPE: ", ftype
+    if ftype == "string":
+      ## convert to rosidl string
+      ftype = "rosidl_runtime_c_String"
     recList.add nnkIdentDefs.newTree(
       nnkPostfix.newTree(ident("*"), ident(field.name)),
-      ident(field.typ.typ),
+      ident(ftype),
       newEmptyNode(),
     )
   tres[0][^1][^1] = recList
   result = nnkStmtList.newTree(tres)
   # echo "result: "
   # echo result.treeRepr
+  # echo result.repr
 
-# macro rosMsgFunc*(): untyped =
-#   let FuncHdr = "$1/msg/detail/$2__functions.h" % [msg.base_type.pkg_name, msg.msg_name.toLower()]

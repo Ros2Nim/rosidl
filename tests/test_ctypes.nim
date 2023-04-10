@@ -15,18 +15,26 @@ import rosidl/ctypes
 {.passC: "-I../deps/local/std_msgs -Ideps/local/std_msgs".}
 
 importcRosMsgFile("../deps/local/std_msgs/std_msgs/msg/Bool.msg")
+importcRosMsgFile("../deps/local/std_msgs/std_msgs/msg/String.msg")
 
 suite "message ctypes":
 
-  test "test bool message file":
+  test "bool message file":
     echo "test"
     let mpath = "deps/local/std_msgs/std_msgs/msg/Bool.msg"
     let msg = parse_message_file(mpath)
     echo "MSG: "
     echo msg
 
-  test "test bool message":
+  test "bool message":
     echo "bool: ", typeof StdMsgsBool
     var x: StdMsgsBool
     x.data = true
     check x.data == true
+
+  test "string message file":
+    echo "test"
+    let mpath = "deps/local/std_msgs/std_msgs/msg/String.msg"
+    let msg = parse_message_file(mpath)
+    echo "MSG: "
+    echo msg
