@@ -1,4 +1,4 @@
-version       = "0.3.0"
+version       = "0.3.1"
 author        = "Jaremy Creechley"
 description   = "RosIDL (ROS2) Interface"
 license       = "MIT"
