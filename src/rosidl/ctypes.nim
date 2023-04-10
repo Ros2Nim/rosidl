@@ -65,6 +65,8 @@ macro importcRosMsgFile*(mpath: typed): untyped =
     )
   tres[0][^1][^1] = recList
   result = nnkStmtList.newTree(tres)
+  # echo "result: "
+  # echo result.treeRepr
 
 # macro rosMsgFunc*(): untyped =
 #   let FuncHdr = "$1/msg/detail/$2__functions.h" % [msg.base_type.pkg_name, msg.msg_name.toLower()]
